@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from flask import render_template, request, flash, redirect, url_for, jsonify
 from flask_login import login_required, current_user
+from sqlalchemy.orm import selectinload
 from app.extensions import db
 from app.blueprints.browse import browse_bp
 from app.models.product import Product
@@ -11,15 +12,17 @@ from app.utils.pagination import paginate
 
 @browse_bp.route('/')
 def home():
-    categories = Category.enabled().order_by(Category.category_name).all()
-    newest = Product.on_sale().order_by(Product.created_at.desc()).limit(12).all()
+    newest = Product.on_sale().options(
+        selectinload(Product.images)
+    ).order_by(Product.created_at.desc()).limit(12).all()
     week_ago = datetime.utcnow() - timedelta(days=7)
-    hottest = Product.on_sale().filter(
+    hottest = Product.on_sale().options(
+        selectinload(Product.images)
+    ).filter(
         Product.created_at >= week_ago
     ).order_by(Product.view_count.desc()).limit(12).all()
     return render_template('browse/home.html',
-                         newest_products=newest, hot_products=hottest,
-                         categories=categories)
+                         newest_products=newest, hot_products=hottest)
 
 
 @browse_bp.route('/category/<int:id>')

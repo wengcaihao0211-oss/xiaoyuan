@@ -1,10 +1,11 @@
 {% macro product_card(product) %}
+{% set cover_image = product.cover_image %}
 <div class="col">
     <a href="{{ url_for('browse.detail', id=product.product_id) }}" class="text-decoration-none">
         <div class="product-card">
             <div class="card-img-wrapper">
-                {% if product.cover_image %}
-                <img src="{{ url_for('static', filename=product.cover_image) }}" alt="{{ product.product_name }}" loading="lazy">
+                {% if cover_image %}
+                <img src="{{ url_for('static', filename=cover_image) }}" alt="{{ product.product_name }}" loading="lazy">
                 {% else %}
                 <div class="img-placeholder">
                     <i class="bi bi-image" style="font-size:2.5rem"></i>

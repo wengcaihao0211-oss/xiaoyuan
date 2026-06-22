@@ -25,7 +25,12 @@ class Product(db.Model):
     deleted = db.Column(db.Boolean, nullable=False, default=False, comment='逻辑删除标志')
 
     # Relationships
-    images = db.relationship('ProductImage', backref='product', lazy='dynamic')
+    images = db.relationship(
+        'ProductImage',
+        backref='product',
+        lazy='selectin',
+        order_by='ProductImage.sort_order',
+    )
     favorites = db.relationship('Favorite', backref='product', lazy='dynamic')
     orders = db.relationship('Order', backref='product', lazy='dynamic')
     messages = db.relationship('Message', backref='product', lazy='dynamic')
@@ -40,12 +45,12 @@ class Product(db.Model):
 
     @property
     def cover_image(self):
-        img = self.images.order_by(ProductImage.sort_order).first()
+        img = self.images[0] if self.images else None
         return img.image_url if img else None
 
     @property
     def image_list(self):
-        return [img.image_url for img in self.images.order_by(ProductImage.sort_order).all()]
+        return [img.image_url for img in self.images]
 
     @property
     def favorite_count(self):
