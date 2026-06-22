@@ -159,12 +159,26 @@ def create_app(config_name='default'):
     @app.context_processor
     def inject_globals():
         from flask_login import current_user
-        ctx = {'current_user': current_user}
-        try:
+        categories_cache = None
+
+        def get_categories():
+            nonlocal categories_cache
+            if categories_cache is not None:
+                return categories_cache
             from app.models.category import Category
-            ctx['get_categories'] = lambda: Category.enabled().order_by(Category.category_name).all()
-        except Exception:
-            ctx['get_categories'] = lambda: []
+            try:
+                categories_cache = Category.enabled().order_by(
+                    Category.category_name
+                ).all()
+            except Exception:
+                db.session.rollback()
+                categories_cache = []
+            return categories_cache
+
+        ctx = {
+            'current_user': current_user,
+            'get_categories': get_categories,
+        }
         if current_user.is_authenticated:
             try:
                 from app.models.notification import Notification

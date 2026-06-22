@@ -60,4 +60,17 @@ def test_homepage_query_count_stays_bounded_with_multiple_products():
             event.remove(db.engine, "before_cursor_execute", record_statement)
 
         assert response.status_code == 200
-        assert len(statements) <= 6, statements
+        assert len(statements) <= 3, statements
+
+
+def test_homepage_degrades_to_empty_state_when_product_query_fails():
+    app = create_app("testing")
+
+    with app.app_context():
+        Category.__table__.create(db.engine)
+        db.session.add(Category(category_name="Books", status="ENABLED"))
+        db.session.commit()
+
+    response = app.test_client().get("/")
+
+    assert response.status_code == 200

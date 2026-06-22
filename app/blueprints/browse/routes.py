@@ -12,15 +12,21 @@ from app.utils.pagination import paginate
 
 @browse_bp.route('/')
 def home():
-    newest = Product.on_sale().options(
-        selectinload(Product.images)
-    ).order_by(Product.created_at.desc()).limit(12).all()
+    try:
+        candidates = Product.on_sale().options(
+            selectinload(Product.images)
+        ).order_by(Product.created_at.desc()).limit(100).all()
+    except Exception:
+        db.session.rollback()
+        candidates = []
+
+    newest = candidates[:12]
     week_ago = datetime.utcnow() - timedelta(days=7)
-    hottest = Product.on_sale().options(
-        selectinload(Product.images)
-    ).filter(
-        Product.created_at >= week_ago
-    ).order_by(Product.view_count.desc()).limit(12).all()
+    hottest = sorted(
+        (product for product in candidates if product.created_at >= week_ago),
+        key=lambda product: product.view_count or 0,
+        reverse=True,
+    )[:12]
     return render_template('browse/home.html',
                          newest_products=newest, hot_products=hottest)
 
