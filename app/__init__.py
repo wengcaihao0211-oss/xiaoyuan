@@ -1,4 +1,8 @@
-from flask import Flask, render_template
+from time import perf_counter
+
+from flask import Flask, jsonify, render_template, request
+from sqlalchemy import inspect, text
+from sqlalchemy.orm import selectinload
 from app.config import config
 from app.extensions import db, login_manager, migrate
 
@@ -26,6 +30,85 @@ def create_app(config_name='default'):
             return f'DB OK: {count} categories'
         except Exception as e:
             return f'DB Error: {str(e)}'
+
+    @app.route('/home-diagnostic')
+    def home_diagnostic():
+        available_stages = [
+            'database', 'schema', 'products', 'images', 'template'
+        ]
+        stage = request.args.get('stage')
+        if not stage:
+            return jsonify({'available_stages': available_stages})
+        if stage not in available_stages:
+            return jsonify({
+                'ok': False,
+                'stage': stage,
+                'error_type': 'UnknownStage',
+            }), 400
+
+        started = perf_counter()
+        try:
+            from app.models.category import Category
+            from app.models.product import Product
+            from app.models.product_image import ProductImage
+
+            if stage == 'database':
+                result = {'value': db.session.execute(text('SELECT 1')).scalar()}
+            elif stage == 'schema':
+                table_names = set(inspect(db.engine).get_table_names())
+                expected = {
+                    'category', 'product', 'product_image', 'users'
+                }
+                result = {
+                    'present': sorted(expected & table_names),
+                    'missing': sorted(expected - table_names),
+                }
+            elif stage == 'products':
+                result = {
+                    'total': Product.query.count(),
+                    'on_sale': Product.on_sale().count(),
+                }
+            elif stage == 'images':
+                result = {'total': ProductImage.query.count()}
+            else:
+                newest = Product.on_sale().options(
+                    selectinload(Product.images)
+                ).order_by(Product.created_at.desc()).limit(12).all()
+                hottest = Product.on_sale().options(
+                    selectinload(Product.images)
+                ).order_by(Product.view_count.desc()).limit(12).all()
+                rendered = render_template(
+                    'browse/home.html',
+                    newest_products=newest,
+                    hot_products=hottest,
+                )
+                result = {
+                    'categories': Category.enabled().count(),
+                    'newest': len(newest),
+                    'hottest': len(hottest),
+                    'rendered_chars': len(rendered),
+                }
+
+            return jsonify({
+                'ok': True,
+                'stage': stage,
+                'elapsed_ms': round((perf_counter() - started) * 1000, 1),
+                'result': result,
+            })
+        except Exception as error:
+            db.session.rollback()
+            app.logger.exception('Homepage diagnostic failed at %s', stage)
+            return jsonify({
+                'ok': False,
+                'stage': stage,
+                'elapsed_ms': round((perf_counter() - started) * 1000, 1),
+                'error_type': type(error).__name__,
+                'error_category': (
+                    'database'
+                    if error.__class__.__module__.startswith('sqlalchemy')
+                    else 'application'
+                ),
+            })
 
     # Register blueprints
     from app.blueprints.auth import auth_bp
