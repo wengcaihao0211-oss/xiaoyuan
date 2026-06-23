@@ -41,12 +41,10 @@
                         {% else %}
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('browse.home') }}"><i class="bi bi-house me-1"></i>首页</a></li>
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('product.publish') }}"><i class="bi bi-plus-circle me-1"></i>发布</a></li>
-                            <li class="nav-item"><a class="nav-link position-relative" href="{{ url_for('browse.favorites') }}">
+                            <li class="nav-item"><a class="nav-link position-relative" href="{{ url_for('browse.favorites') }}" id="favLink">
                                 <i class="bi bi-heart me-1"></i>收藏
                                 {% if favorite_count > 0 %}
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.65rem">
-                                    {{ favorite_count }}
-                                </span>
+                                <span class="fav-dot" id="favDot"></span>
                                 {% endif %}
                             </a></li>
                             <li class="nav-item dropdown">

@@ -197,6 +197,17 @@ a:hover {
   color: #fff !important;
   box-shadow: 0 2px 8px rgba(88, 86, 214, 0.20);
 }
+/* favorites red dot */
+.fav-dot {
+  position: absolute;
+  top: 6px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--danger);
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.9);
+}
 
 .navbar .btn-light {
   background: linear-gradient(135deg, var(--primary), #7B78F2);

@@ -18,6 +18,20 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 5000);
     });
 
+    // --- Fav dot: click to hide ---
+    var favDot = document.getElementById('favDot');
+    var favLink = document.getElementById('favLink');
+    if (favDot && favLink) {
+        // hide if already viewed this session
+        if (sessionStorage.getItem('favViewed') === '1') {
+            favDot.style.display = 'none';
+        }
+        favLink.addEventListener('click', function () {
+            sessionStorage.setItem('favViewed', '1');
+            favDot.style.display = 'none';
+        });
+    }
+
     // --- Bootstrap tooltips ---
     [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]')).forEach(function (el) {
         return new bootstrap.Tooltip(el);

@@ -300,6 +300,22 @@ document.querySelector('.btn-fav')?.addEventListener('click', async function(){
         const icon = this.querySelector('i');
         icon.className = 'bi ' + (data.is_favorited ? 'bi-heart-fill' : 'bi-heart');
         this.classList.toggle('active', data.is_favorited);
+        // update nav fav dot
+        let dot = document.getElementById('favDot');
+        if (data.favorite_count > 0) {
+            if (!dot) {
+                const favLink = document.getElementById('favLink');
+                if (favLink) {
+                    dot = document.createElement('span');
+                    dot.id = 'favDot';
+                    dot.className = 'fav-dot';
+                    favLink.appendChild(dot);
+                }
+            }
+            if (dot) { dot.style.display = ''; sessionStorage.removeItem('favViewed'); }
+        } else {
+            if (dot) dot.style.display = 'none';
+        }
     }
 });
 </script>
