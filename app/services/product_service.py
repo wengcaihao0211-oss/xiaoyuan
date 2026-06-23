@@ -7,6 +7,7 @@ from app.models.product import Product
 from app.models.product_image import ProductImage
 from app.models.orders import Order
 from app.utils.helpers import save_upload
+from app.services.ai_review_service import analyze_product_content
 
 ALLOWED_IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp'}
 ALLOWED_IMAGE_MIME_TYPES = {'image/jpeg', 'image/png', 'image/webp'}
@@ -132,8 +133,34 @@ def create_product(seller_id, name, category_id, price, condition_level,
     valid_images, images_message, valid_image_files = validate_publish_images(images, submit=submit)
     if not valid_images:
         return False, images_message, None
+    
+    # AI内容审核 - 只在提交审核时检查
+    status = 'DRAFT'
+    result_message = ''
+    if submit:
+        review_result, review_reason = analyze_product_content(payload['name'], payload['description'])
+        
+        if review_result == 'REJECTED':
+            # 高/中风险 - 直接拒绝
+            return False, review_reason, None
+        
+        elif review_result == 'NEEDS_REVIEW':
+            # 低风险 - 需要人工审核
+            status = 'PENDING_REVIEW'
+            result_message = f'商品已提交审核，{review_reason}，请等待管理员审核。'
+        
+        else:  # APPROVED
+            # 正常 - 直接上架
+            status = 'ON_SALE'
+            result_message = '商品已自动审核通过并上架！'
+    
+    if not submit:
+        status = 'DRAFT'
+        result_message = '商品保存为草稿。'
+    elif not result_message:
+        status = 'PENDING_REVIEW'
+        result_message = '商品已提交审核，请等待管理员审核。'
 
-    status = 'PENDING_REVIEW' if submit else 'DRAFT'
     product = Product(
         seller_id=seller_id, category_id=payload['category_id'],
         product_name=payload['name'], price=payload['price'],
@@ -151,7 +178,7 @@ def create_product(seller_id, name, category_id, price, condition_level,
             return False, str(exc), None
 
     db.session.commit()
-    return True, f'商品提交成功，商品编号：{product.product_id}，当前状态：{"待审核" if submit else "草稿"}。', product
+    return True, f'商品提交成功，商品编号：{product.product_id}，{result_message}', product
 
 
 def save_product_images(product_id, images):
@@ -182,6 +209,24 @@ def update_product(product, name, category_id, price, condition_level,
     valid_images, image_message, new_images = validate_new_images(images)
     if not valid_images:
         return False, image_message
+    
+    # AI内容审核 - 只在提交审核时检查
+    result_message = ''
+    if submit:
+        review_result, review_reason = analyze_product_content(payload['name'], payload['description'])
+        
+        if review_result == 'REJECTED':
+            # 高/中风险 - 直接拒绝
+            return False, review_reason
+        
+        elif review_result == 'NEEDS_REVIEW':
+            # 低风险 - 需要人工审核
+            result_message = f'商品已提交审核，{review_reason}，请等待管理员审核。'
+        
+        else:  # APPROVED
+            # 正常 - 可以直接处理
+            result_message = '商品已自动审核通过！'
+
 
     existing_images = ProductImage.query.filter_by(product_id=product.product_id).order_by(
         ProductImage.sort_order.asc(), ProductImage.image_id.asc()
@@ -204,10 +249,27 @@ def update_product(product, name, category_id, price, condition_level,
     product.description = payload['description']
     product.trade_location = payload['trade_location']
 
-    if product.product_status in ('APPROVED', 'ON_SALE', 'OFF_SHELF'):
-        product.product_status = 'PENDING_REVIEW' if submit else 'DRAFT'
-    elif submit:
-        product.product_status = 'PENDING_REVIEW'
+    if submit:
+        review_result, _ = analyze_product_content(payload['name'], payload['description'])
+        
+        if review_result == 'REJECTED':
+            # 高/中风险 - 直接拒绝（前面已经返回）
+            pass
+        
+        elif review_result == 'NEEDS_REVIEW':
+            # 低风险 - 需要人工审核
+            product.product_status = 'PENDING_REVIEW'
+        
+        else:  # APPROVED
+            # 正常 - 直接上架
+            product.product_status = 'ON_SALE'
+    
+    else:  # not submit
+        if product.product_status in ('APPROVED', 'ON_SALE', 'OFF_SHELF'):
+            product.product_status = 'DRAFT'
+    
+    if not result_message:
+        result_message = '商品更新成功！'
 
     for idx, image in enumerate(ordered_existing_images):
         image.sort_order = idx
@@ -231,7 +293,7 @@ def update_product(product, name, category_id, price, condition_level,
             return False, str(exc)
 
     db.session.commit()
-    return True, '商品更新成功！'
+    return True, result_message
 
 
 def delete_product(product):
@@ -257,9 +319,27 @@ def toggle_product_status(product, target_status=None):
         category = db.session.get(Category, product.category_id)
         if not category or category.status != 'ENABLED':
             return False, '商品分类不存在或已停用，无法提交审核。'
-        product.product_status = 'PENDING_REVIEW'
+        
+        # AI内容审核
+        review_result, review_reason = analyze_product_content(product.product_name, product.description)
+        
+        if review_result == 'REJECTED':
+            # 高/中风险 - 直接拒绝
+            return False, review_reason
+        
+        elif review_result == 'NEEDS_REVIEW':
+            # 低风险 - 需要人工审核
+            product.product_status = 'PENDING_REVIEW'
+            result_message = f'商品已提交审核，{review_reason}，请等待管理员审核。'
+        
+        else:  # APPROVED
+            # 正常 - 直接上架
+            product.product_status = 'ON_SALE'
+            result_message = '商品已自动审核通过并上架！'
+        
         db.session.commit()
-        return True, '商品已提交审核。'
+        return True, result_message
+    
     elif product.product_status == 'ON_SALE':
         product.product_status = 'OFF_SHELF'
         db.session.commit()
@@ -271,9 +351,22 @@ def toggle_product_status(product, target_status=None):
     elif product.product_status == 'PENDING_REVIEW':
         return False, '商品正在审核中，请耐心等待。'
     elif product.product_status == 'REJECTED':
-        product.product_status = 'PENDING_REVIEW'
+        # 重新提交时也要审核
+        review_result, review_reason = analyze_product_content(product.product_name, product.description)
+        
+        if review_result == 'REJECTED':
+            return False, review_reason
+        
+        elif review_result == 'NEEDS_REVIEW':
+            product.product_status = 'PENDING_REVIEW'
+            result_message = f'商品已重新提交审核，{review_reason}，请等待管理员审核。'
+        
+        else:
+            product.product_status = 'ON_SALE'
+            result_message = '商品已自动审核通过并上架！'
+        
         db.session.commit()
-        return True, '商品已重新提交审核。'
+        return True, result_message
     else:
         return False, '当前状态无法变更。'
 

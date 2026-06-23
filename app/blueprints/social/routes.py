@@ -2,10 +2,11 @@ from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from app.extensions import db
 from app.blueprints.social import social_bp
-from app.blueprints.social.forms import MessageForm, ReviewForm, ReportForm
+from app.blueprints.social.forms import MessageForm, ReviewForm, ReportForm, AppealForm
 from app.models.product import Product
 from app.models.orders import Order
 from app.models.user import User
+from app.models.report import Report
 from app.services import message_service
 from app.services import review_service
 from app.services import report_service
@@ -177,3 +178,55 @@ def my_reports():
     """
     reports = report_service.get_user_reports(current_user.user_id)
     return render_template('social/my_reports.html', reports=reports)
+
+
+@social_bp.route('/reports-against-me')
+@login_required
+def reports_against_me():
+    """
+    针对我的举报列表（作为被举报人）
+    """
+    reports = report_service.get_reports_against_user(current_user.user_id)
+    return render_template('social/reports_against_me.html', reports=reports)
+
+
+@social_bp.route('/report/<int:report_id>/appeal', methods=['GET', 'POST'])
+@login_required
+def appeal_report(report_id):
+    """
+    申诉举报
+    """
+    from app.blueprints.social.forms import AppealForm
+    
+    report = db.session.get(Report, report_id)
+    if not report:
+        flash('举报不存在。', 'danger')
+        return redirect(url_for('social.reports_against_me'))
+    
+    # 检查权限
+    if not report_service.is_target_owner(current_user.user_id, report):
+        flash('您无权对此举报进行申诉。', 'danger')
+        return redirect(url_for('social.reports_against_me'))
+    
+    # 检查是否已申诉
+    if report.is_appealed:
+        flash('您已对此举报进行过申诉。', 'info')
+        return redirect(url_for('social.reports_against_me'))
+    
+    # 检查是否已处理
+    if report.report_status == 'PENDING':
+        flash('该举报尚未处理，无需申诉。', 'info')
+        return redirect(url_for('social.reports_against_me'))
+    
+    form = AppealForm()
+    if form.validate_on_submit():
+        success, message = report_service.submit_appeal(
+            report_id=report_id,
+            user_id=current_user.user_id,
+            appeal_content=form.appeal_content.data
+        )
+        flash(message, 'success' if success else 'danger')
+        if success:
+            return redirect(url_for('social.reports_against_me'))
+    
+    return render_template('social/appeal_form.html', report=report, form=form)

@@ -41,3 +41,11 @@ class ReportForm(FlaskForm):
         Length(min=10, max=500, message='说明长度需要在10～500字之间')
     ])
     submit = SubmitField('提交举报')
+
+
+class AppealForm(FlaskForm):
+    appeal_content = TextAreaField('申诉内容（10～1000字）', validators=[
+        DataRequired('申诉内容不能为空'),
+        Length(min=10, max=1000, message='申诉内容长度需要在10～1000字之间')
+    ])
+    submit = SubmitField('提交申诉')

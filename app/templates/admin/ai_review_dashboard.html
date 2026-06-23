@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}AI审核管理{% endblock %}
+{% block content %}
+<h4 class="mb-3"><i class="bi bi-robot"></i> AI审核管理</h4>
+
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card text-bg-info">
+            <div class="card-body text-center">
+                <h3>{{ stats.total_reports }}</h3>
+                <small>总举报数</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-bg-primary">
+            <div class="card-body text-center">
+                <h3>{{ stats.ai_reviewed }}</h3>
+                <small>AI已审核</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-bg-warning">
+            <div class="card-body text-center">
+                <h3>{{ stats.pending_human_review }}</h3>
+                <small>待人工审核</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="card text-bg-success">
+            <div class="card-body text-center">
+                <h3>{{ stats.auto_handled }}</h3>
+                <small>AI自动处理</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header"><h6 class="mb-0">AI审核效率</h6></div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span>AI审核率</span>
+                        <span>{{ stats.ai_review_rate }}%</span>
+                    </div>
+                    <div class="progress">
+                        <div class="progress-bar bg-info" style="width: {{ stats.ai_review_rate }}%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header"><h6 class="mb-0">审核结果分布</h6></div>
+            <div class="card-body">
+                <table class="table table-sm mb-0">
+                    <tr>
+                        <td><span class="badge bg-success">安全</span></td>
+                        <td class="text-end"><strong>{{ stats.results.safe }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge bg-danger">违规</span></td>
+                        <td class="text-end"><strong>{{ stats.results.violation }}</strong></td>
+                    </tr>
+                    <tr>
+                        <td><span class="badge bg-warning">需人工审核</span></td>
+                        <td class="text-end"><strong>{{ stats.results.uncertain }}</strong></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header"><h6 class="mb-0">快捷操作</h6></div>
+            <div class="card-body d-grid gap-2 d-md-flex">
+                <a href="{{ url_for('admin.pending_human_review') }}" class="btn btn-warning">
+                    <i class="bi bi-exclamation-triangle"></i> 查看待人工审核
+                </a>
+                <a href="{{ url_for('admin.ai_reviewed_reports') }}" class="btn btn-primary">
+                    <i class="bi bi-check-circle"></i> 查看AI已审核
+                </a>
+                <a href="{{ url_for('admin.report_list') }}" class="btn btn-secondary">
+                    <i class="bi bi-list"></i> 所有举报
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

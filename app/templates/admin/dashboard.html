@@ -55,6 +55,12 @@
             <div class="card-body d-grid gap-2">
                 <a href="{{ url_for('admin.product_review') }}" class="btn btn-outline-warning">待审核商品 ({{ stats.pending_products }})</a>
                 <a href="{{ url_for('admin.report_list') }}" class="btn btn-outline-danger">待处理举报 ({{ stats.pending_reports }})</a>
+                <a href="{{ url_for('admin.appeal_list') }}" class="btn btn-outline-warning">
+                    <i class="bi bi-exclamation-triangle"></i> 申诉管理
+                </a>
+                <a href="{{ url_for('admin.ai_review_dashboard') }}" class="btn btn-outline-success">
+                    <i class="bi bi-robot"></i> AI审核管理
+                </a>
                 <a href="{{ url_for('admin.user_list') }}" class="btn btn-outline-primary">用户管理</a>
                 <a href="{{ url_for('admin.categories') }}" class="btn btn-outline-info">分类管理</a>
                 <a href="{{ url_for('admin.statistics') }}" class="btn btn-outline-secondary">数据统计</a>

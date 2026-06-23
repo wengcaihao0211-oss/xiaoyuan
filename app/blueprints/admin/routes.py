@@ -340,6 +340,60 @@ def handle_report(id):
     return redirect(url_for('admin.report_list'))
 
 
+# ---- AI Review (F51) ----
+@admin_bp.route('/ai-review/dashboard')
+@admin_required
+def ai_review_dashboard():
+    """AI审核仪表板"""
+    stats = admin_service.get_ai_review_stats()
+    return render_template('admin/ai_review_dashboard.html', stats=stats)
+
+
+@admin_bp.route('/ai-review/pending-human')
+@admin_required
+def pending_human_review():
+    """需要人工审核的举报列表"""
+    page = request.args.get('page', 1, type=int)
+    reports, total, total_pages = admin_service.get_pending_human_review_reports(page, per_page=20)
+    return render_template('admin/pending_human_review.html',
+                         reports=reports, total=total, total_pages=total_pages,
+                         current_page=page)
+
+
+@admin_bp.route('/ai-review/reviewed')
+@admin_required
+def ai_reviewed_reports():
+    """AI已审核的举报列表"""
+    page = request.args.get('page', 1, type=int)
+    reports, total, total_pages = admin_service.get_ai_reviewed_reports(page, per_page=20)
+    return render_template('admin/ai_reviewed_reports.html',
+                         reports=reports, total=total, total_pages=total_pages,
+                         current_page=page)
+
+
+# ---- Appeal Handling ----
+@admin_bp.route('/appeals')
+@admin_required
+def appeal_list():
+    """申诉列表"""
+    reports = report_service.get_appealed_reports()
+    return render_template('admin/appeal_list.html', reports=reports)
+
+
+@admin_bp.route('/appeals/<int:id>/handle', methods=['POST'])
+@admin_required
+def handle_appeal(id):
+    """处理申诉"""
+    action = request.form.get('action', 'UPHELD')
+    handle_result = request.form.get('handle_result', '').strip()
+    success, message = report_service.handle_appeal(
+        report_id=id, handler_id=current_user.user_id,
+        action=action, handle_result=handle_result or None
+    )
+    flash(message, 'success' if success else 'danger')
+    return redirect(url_for('admin.appeal_list'))
+
+
 # ---- Statistics (F50) ----
 @admin_bp.route('/statistics')
 @admin_required

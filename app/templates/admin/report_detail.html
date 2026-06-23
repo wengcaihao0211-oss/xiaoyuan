@@ -4,7 +4,13 @@
 <nav aria-label="breadcrumb">
     <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">管理后台</a></li>
-        <li class="breadcrumb-item"><a href="{{ url_for('admin.report_list') }}">举报管理</a></li>
+        <li class="breadcrumb-item">
+            {% if report.is_appealed and not report.appeal_handled %}
+            <a href="{{ url_for('admin.appeal_list') }}">申诉管理</a>
+            {% else %}
+            <a href="{{ url_for('admin.report_list') }}">举报管理</a>
+            {% endif %}
+        </li>
         <li class="breadcrumb-item active">#{{ report.report_id }}</li>
     </ol>
 </nav>
@@ -20,12 +26,69 @@
                     <tr><th>说明</th><td>{{ report.description or '无' }}</td></tr>
                     <tr><th>状态</th><td><span class="badge bg-{{ 'warning' if report.report_status=='PENDING' else 'secondary' }}">{{ report.status_display }}</span></td></tr>
                     <tr><th>提交时间</th><td>{{ report.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td></tr>
-                    {% if report.handler %}
-                    <tr><th>处理人</th><td>{{ report.handler.username }}</td></tr>
+                </table>
+                
+                {% if report.ai_reviewed %}
+                <hr>
+                <h6 class="mb-3"><i class="bi bi-robot"></i> AI审核信息</h6>
+                <table class="table table-sm">
+                    <tr>
+                        <th width="120">AI结果</th>
+                        <td>
+                            {% if report.ai_review_result == 'SAFE' %}
+                            <span class="badge bg-success">安全</span>
+                            {% elif report.ai_review_result == 'VIOLATION' %}
+                            <span class="badge bg-danger">违规</span>
+                            {% else %}
+                            <span class="badge bg-warning">需人工审核</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    <tr><th>置信度</th><td>{{ report.ai_review_confidence }}%</td></tr>
+                    <tr><th>AI理由</th><td>{{ report.ai_review_reason or '无' }}</td></tr>
+                    <tr><th>审核时间</th><td>{{ report.ai_reviewed_at.strftime('%Y-%m-%d %H:%M:%S') if report.ai_reviewed_at else '-' }}</td></tr>
+                    <tr>
+                        <th>需人工审核</th>
+                        <td>
+                            {% if report.needs_human_review %}
+                            <span class="badge bg-warning">是</span>
+                            {% else %}
+                            <span class="badge bg-success">否（已自动处理）</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+                {% endif %}
+                
+                {% if report.is_appealed %}
+                <hr>
+                <h6 class="mb-3"><i class="bi bi-exclamation-triangle"></i> 申诉信息</h6>
+                <table class="table table-sm">
+                    <tr><th width="120">申诉时间</th><td>{{ report.appealed_at.strftime('%Y-%m-%d %H:%M:%S') if report.appealed_at else '-' }}</td></tr>
+                    <tr><th>申诉内容</th><td>{{ report.appeal_content or '无' }}</td></tr>
+                    <tr>
+                        <th>申诉状态</th>
+                        <td>
+                            {% if report.appeal_handled %}
+                            <span class="badge bg-secondary">已处理</span>
+                            {% else %}
+                            <span class="badge bg-warning">待处理</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                </table>
+                {% endif %}
+                
+                {% if report.handler %}
+                <hr>
+                <h6 class="mb-3">处理结果</h6>
+                <table class="table table-sm">
+                    <tr><th width="80">处理人</th><td>{{ report.handler.username }}</td></tr>
                     <tr><th>处理结果</th><td>{{ report.handle_result or '-' }}</td></tr>
                     <tr><th>处理时间</th><td>{{ report.handled_at.strftime('%Y-%m-%d %H:%M:%S') if report.handled_at else '-' }}</td></tr>
-                    {% endif %}
                 </table>
+                {% endif %}
+                
                 {% if report.target_snapshot %}
                 <hr>
                 <h6 class="mb-3">举报时目标快照</h6>
@@ -49,8 +112,28 @@
         </div>
     </div>
     <div class="col-md-4">
-        {% if report.report_status == 'PENDING' %}
-        <div class="card shadow-sm">
+        {% if report.is_appealed and not report.appeal_handled %}
+        <div class="card shadow-sm mb-3">
+            <div class="card-header"><h6 class="mb-0">处理申诉</h6></div>
+            <div class="card-body">
+                <form method="post" action="{{ url_for('admin.handle_appeal', id=report.report_id) }}">
+                    <div class="mb-2">
+                        <label class="form-label">处理方式</label>
+                        <select name="action" class="form-select mb-2" required>
+                            <option value="UPHELD">维持原决定</option>
+                            <option value="REVERSED">推翻原决定</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label">处理说明</label>
+                        <textarea name="handle_result" class="form-control" rows="3" maxlength="1000"></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-warning w-100">确认处理</button>
+                </form>
+            </div>
+        </div>
+        {% elif report.report_status == 'PENDING' %}
+        <div class="card shadow-sm mb-3">
             <div class="card-header"><h6 class="mb-0">处理举报</h6></div>
             <div class="card-body">
                 <form method="post" action="{{ url_for('admin.handle_report', id=report.report_id) }}">

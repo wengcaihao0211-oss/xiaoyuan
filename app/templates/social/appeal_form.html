@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}申诉举报{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{{ url_for('browse.home') }}">首页</a></li>
+        <li class="breadcrumb-item"><a href="{{ url_for('social.reports_against_me') }}">针对我的举报</a></li>
+        <li class="breadcrumb-item active">申诉</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h5 class="mb-0">申诉举报 #{{ report.report_id }}</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-4">
+                    <h6 class="alert-heading">举报内容</h6>
+                    <p class="mb-2"><strong>举报原因：</strong>{{ report.report_reason }}</p>
+                    <p class="mb-2"><strong>详细说明：</strong>{{ report.description or '无' }}</p>
+                    <p class="mb-0"><strong>处理结果：</strong>{{ report.status_display }}</p>
+                </div>
+
+                <form method="POST">
+                    {{ form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ form.appeal_content.label(class="form-label") }}
+                        {{ form.appeal_content(class="form-control", rows=6, placeholder="请详细说明您的申诉理由...") }}
+                        {% if form.appeal_content.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.appeal_content.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{{ url_for('social.reports_against_me') }}" class="btn btn-secondary me-md-2">取消</a>
+                        {{ form.submit(class="btn btn-warning") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

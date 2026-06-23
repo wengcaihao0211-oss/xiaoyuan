@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}待人工审核{% endblock %}
+{% block content %}
+<h4 class="mb-3"><i class="bi bi-exclamation-triangle"></i> 待人工审核</h4>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">共 {{ total }} 条待人工审核</h6>
+        <a href="{{ url_for('admin.ai_review_dashboard') }}" class="btn btn-sm btn-secondary">
+            <i class="bi bi-arrow-left"></i> 返回
+        </a>
+    </div>
+    <div class="card-body p-0">
+        {% if reports %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>类型</th>
+                        <th>举报原因</th>
+                        <th>AI结果</th>
+                        <th>置信度</th>
+                        <th>时间</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for report in reports %}
+                    <tr>
+                        <td>{{ report.report_id }}</td>
+                        <td>{{ report.target_type }}</td>
+                        <td>{{ report.report_reason }}</td>
+                        <td>
+                            {% if report.ai_review_result == 'SAFE' %}
+                            <span class="badge bg-success">安全</span>
+                            {% elif report.ai_review_result == 'VIOLATION' %}
+                            <span class="badge bg-danger">违规</span>
+                            {% else %}
+                            <span class="badge bg-warning">需人工</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ report.ai_review_confidence }}%</td>
+                        <td>{{ report.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                        <td>
+                            <a href="{{ url_for('admin.report_detail', id=report.report_id) }}" class="btn btn-sm btn-primary">
+                                审核
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-check-circle" style="font-size: 3rem;"></i>
+            <p class="mt-2">暂无待人工审核的举报</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+{% if total_pages > 1 %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if current_page > 1 %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('admin.pending_human_review', page=current_page-1) }}">上一页</a>
+        </li>
+        {% endif %}
+        
+        {% for p in range(1, total_pages + 1) %}
+        <li class="page-item {% if p == current_page %}active{% endif %}">
+            <a class="page-link" href="{{ url_for('admin.pending_human_review', page=p) }}">{{ p }}</a>
+        </li>
+        {% endfor %}
+        
+        {% if current_page < total_pages %}
+        <li class="page-item">
+            <a class="page-link" href="{{ url_for('admin.pending_human_review', page=current_page+1) }}">下一页</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

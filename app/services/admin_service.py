@@ -8,6 +8,7 @@ from app.models.orders import Order
 from app.models.category import Category
 from app.models.report import Report
 from app.models.notification import Notification
+from app.services.ai_review_service import AIReviewService
 
 
 # #region debug-point B:admin-review-service
@@ -253,3 +254,49 @@ def manage_category(action, category_id=None, name=None, description=None):
         return True, '分类已删除。'
 
     return False, '无效操作。'
+
+
+def get_pending_human_review_reports(page=1, per_page=20):
+    """
+    获取需要人工审核的举报列表
+    """
+    return AIReviewService.get_pending_human_reviews(page, per_page)
+
+
+def get_ai_reviewed_reports(page=1, per_page=20):
+    """
+    获取AI已审核的举报列表
+    """
+    return AIReviewService.get_ai_reviewed_reports(page, per_page)
+
+
+def get_ai_review_stats():
+    """
+    获取AI审核统计数据
+    """
+    total_reports = Report.query.count()
+    ai_reviewed = Report.query.filter_by(ai_reviewed=True).count()
+    pending_human = Report.query.filter_by(needs_human_review=True, report_status='PENDING').count()
+    auto_handled = Report.query.filter(
+        Report.ai_reviewed == True,
+        Report.needs_human_review == False,
+        Report.report_status != 'PENDING'
+    ).count()
+    
+    # 按结果统计
+    safe_count = Report.query.filter_by(ai_review_result='SAFE').count()
+    violation_count = Report.query.filter_by(ai_review_result='VIOLATION').count()
+    uncertain_count = Report.query.filter_by(ai_review_result='UNCERTAIN').count()
+    
+    return {
+        'total_reports': total_reports,
+        'ai_reviewed': ai_reviewed,
+        'pending_human_review': pending_human,
+        'auto_handled': auto_handled,
+        'ai_review_rate': round(ai_reviewed / total_reports * 100, 1) if total_reports > 0 else 0,
+        'results': {
+            'safe': safe_count,
+            'violation': violation_count,
+            'uncertain': uncertain_count
+        }
+    }
