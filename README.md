@@ -1,11 +1,11 @@
 # 校园二手物品交易与闲置管理系统
 
-基于 Python Flask + MySQL 的校园二手交易平台，实现 B/S 架构的 Web 应用。
+基于 Python Flask + Supabase PostgreSQL 的校园二手交易平台，实现 B/S 架构的 Web 应用。
 
 ## 技术栈
 
 - **后端**: Python 3.10+, Flask 3.1
-- **数据库**: MySQL 8.0+ (utf8mb4)
+- **数据库**: Supabase PostgreSQL
 - **ORM**: SQLAlchemy 2.0 + Flask-SQLAlchemy
 - **前端**: Jinja2 模板 + Bootstrap 5
 - **认证**: Flask-Login + Werkzeug 密码哈希
@@ -27,7 +27,7 @@
 ### 1. 环境要求
 
 - Python 3.10+
-- MySQL 8.0+
+- Supabase 项目和 Postgres 连接串
 - pip
 
 ### 2. 安装依赖
@@ -37,29 +37,37 @@ cd xiaoyuan
 pip install -r requirements.txt
 ```
 
-### 3. 配置数据库
+### 3. 配置 Supabase 数据库
 
 编辑 `.env.example` 为 `.env`，修改数据库连接信息：
 
 ```env
 SECRET_KEY=your-secret-key
-DATABASE_URL=mysql+pymysql://root:password@localhost:3306/xiaoyuan?charset=utf8mb4
+DATABASE_URL=postgresql://postgres.<project-ref>:<password>@aws-0-<region>.pooler.supabase.com:6543/postgres
 ```
 
-创建数据库并导入表结构：
+在 Supabase 中创建表结构，二选一：
 
 ```bash
-mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS xiaoyuan CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;"
-mysql -u root -p xiaoyuan < sql/schema.sql
+python init_db.py
 ```
 
-### 4. 初始化管理员账号
+或把 `sql/schema_pg.sql` 粘贴到 Supabase SQL Editor 执行。
 
-启动应用后，注册一个用户，然后在数据库中将其角色设为 ADMIN：
+如果你只想临时在本地使用 SQLite 调试，可额外设置：
 
-```sql
-UPDATE user SET role = 'ADMIN' WHERE username = '你的用户名';
+```env
+ALLOW_SQLITE_DEV=1
 ```
+
+### 4. 初始化数据
+
+`python init_db.py` 会自动：
+
+- 创建所有表
+- 初始化 7 个商品分类
+- 创建管理员账号 `admin / admin123`
+- 创建测试账号 `testuser / test123`
 
 ### 5. 运行
 
@@ -112,3 +120,4 @@ REJECTED   CANCELLED
 - 图片上传限制：JPG/PNG/WebP，单张≤5MB，每商品最多6张
 - 登录锁定：5次失败锁定15分钟
 - 同一商品同一买家只能有一个活跃订单
+- 默认开发配置已切换到 Supabase；未提供 `DATABASE_URL` 时不会再静默写入本地 SQLite

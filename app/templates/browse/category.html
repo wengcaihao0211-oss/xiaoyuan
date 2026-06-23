@@ -8,16 +8,35 @@
         <li class="breadcrumb-item active">{{ category.category_name }}</li>
     </ol>
 </nav>
-<h4 class="mb-3">{{ category.category_name }}</h4>
-{% if pagination.items %}
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3 mb-3">
+    <div>
+        <h4 class="mb-1">{{ category.category_name }}</h4>
+        <div class="text-muted small">共 {{ pagination.total }} 个在售商品</div>
+    </div>
+    <form method="get" action="{{ url_for('browse.category', id=category.category_id) }}" class="d-flex align-items-center gap-2">
+        <label for="sort" class="form-label mb-0 text-nowrap">排序方式</label>
+        <select id="sort" name="sort" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="latest" {{ 'selected' if current_sort == 'latest' }}>最新发布</option>
+            <option value="price_asc" {{ 'selected' if current_sort == 'price_asc' }}>价格从低到高</option>
+            <option value="price_desc" {{ 'selected' if current_sort == 'price_desc' }}>价格从高到低</option>
+        </select>
+    </form>
+</div>
+{% if products %}
 <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
-    {% for p in pagination.items %}
+    {% for p in products %}
     {{ product_card(p) }}
     {% endfor %}
 </div>
 {% from "partials/_pagination.html" import render_pagination %}
-{{ render_pagination(pagination, 'browse.category') }}
+{{ render_pagination(pagination, 'browse.category', {'id': category.category_id}) }}
 {% else %}
-<div class="text-center py-5 text-muted">该分类暂无在售商品</div>
+<div class="text-center py-5 text-muted">
+    {% if pagination.total > 0 %}
+    当前页没有商品，请尝试返回上一页。
+    {% else %}
+    该分类暂无在售商品
+    {% endif %}
+</div>
 {% endif %}
 {% endblock %}

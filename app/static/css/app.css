@@ -235,6 +235,50 @@ a:hover { color: var(--primary-dark); }
   color: var(--text-muted);
 }
 
+/* ---- Home Sidebar ---- */
+.home-layout {
+  align-items: flex-start;
+}
+.home-sidebar {
+  position: sticky;
+  top: 104px;
+}
+.home-category-card .card-body {
+  padding: 18px;
+}
+.home-category-list {
+  display: grid;
+  gap: 10px;
+}
+.home-category-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  background: var(--border-light);
+  border: 1px solid var(--border);
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 600;
+  transition: all var(--transition);
+}
+.home-category-link i {
+  color: var(--text-muted);
+  transition: transform var(--transition), color var(--transition);
+}
+.home-category-link:hover {
+  background: var(--primary-light);
+  border-color: rgba(45,159,122,0.22);
+  color: var(--primary-dark);
+  transform: translateY(-1px);
+}
+.home-category-link:hover i {
+  color: var(--primary-dark);
+  transform: translateX(2px);
+}
+
 /* ---- Search ---- */
 .search-layout {
   align-items: flex-start;
@@ -1022,6 +1066,10 @@ a:hover { color: var(--primary-dark); }
     position: static;
     top: auto;
   }
+  .home-sidebar {
+    position: static;
+    top: auto;
+  }
   .search-results-head {
     flex-direction: column;
     gap: 8px;
@@ -1082,6 +1130,34 @@ a:hover { color: var(--primary-dark); }
   .app-footer .row > div {
     text-align: center;
   }
+}
+
+/* ---- Order Submit Page ---- */
+.trade-type-card {
+  transition: all var(--transition);
+  cursor: pointer;
+}
+.trade-type-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.trade-type-card:has(.form-check-input:checked) {
+  border-color: var(--primary) !important;
+  background: var(--primary-light);
+}
+.trade-type-card .form-check-input {
+  width: 24px;
+  height: 24px;
+  border: 3px solid var(--border);
+  transition: all var(--transition);
+}
+.trade-type-card .form-check-input:checked {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(45,159,122,0.15);
+}
+.trade-type-card .form-check-input:focus {
+  box-shadow: 0 0 0 4px rgba(45,159,122,0.1);
 }
 
 @media (max-width: 480px) {

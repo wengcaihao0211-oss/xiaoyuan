@@ -1,4 +1,7 @@
 from datetime import datetime, timedelta
+import json
+import uuid
+import urllib.request
 from flask import render_template, redirect, url_for, flash, request, session
 from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db
@@ -16,6 +19,37 @@ from app.services import auth_service, admin_service, report_service
 from app.utils.decorators import admin_required
 from app.utils.helpers import mask_phone
 from app.utils.pagination import paginate
+
+
+# #region debug-point A:admin-review-route
+def _report_admin_review_route(hypothesis_id, location, message, data=None, trace_id=None):
+    _u = 'http://127.0.0.1:7777/event'
+    _s = 'admin-review-500'
+    try:
+        with open('.dbg/admin-review-500.env', encoding='utf-8') as _f:
+            for _line in _f:
+                if _line.startswith('DEBUG_SERVER_URL='):
+                    _u = _line.split('=', 1)[1].strip() or _u
+                elif _line.startswith('DEBUG_SESSION_ID='):
+                    _s = _line.split('=', 1)[1].strip() or _s
+        _payload = {
+            'sessionId': _s,
+            'runId': 'pre-fix',
+            'hypothesisId': hypothesis_id,
+            'location': location,
+            'msg': f'[DEBUG] {message}',
+            'data': data or {},
+        }
+        if trace_id:
+            _payload['traceId'] = trace_id
+        urllib.request.urlopen(urllib.request.Request(
+            _u,
+            data=json.dumps(_payload).encode(),
+            headers={'Content-Type': 'application/json'}
+        ), timeout=1).read()
+    except Exception:
+        pass
+# #endregion
 
 
 # ---- Admin Login (F43) ----
@@ -111,18 +145,68 @@ def product_review():
 @admin_bp.route('/products/<int:id>/approve', methods=['POST'])
 @admin_required
 def approve_product(id):
-    success, message = admin_service.review_product(id, 'approve')
-    flash(message, 'success' if success else 'danger')
-    return redirect(url_for('admin.product_review'))
+    trace_id = uuid.uuid4().hex
+    _report_admin_review_route(
+        'A',
+        'app/blueprints/admin/routes.py:approve_product',
+        'approve request received',
+        {'product_id': id, 'method': request.method, 'user_id': getattr(current_user, 'user_id', None)},
+        trace_id
+    )
+    try:
+        success, message = admin_service.review_product(id, 'approve', trace_id=trace_id)
+        _report_admin_review_route(
+            'A',
+            'app/blueprints/admin/routes.py:approve_product',
+            'approve request completed',
+            {'product_id': id, 'success': success, 'message': message},
+            trace_id
+        )
+        flash(message, 'success' if success else 'danger')
+        return redirect(url_for('admin.product_review'))
+    except Exception as error:
+        _report_admin_review_route(
+            'B',
+            'app/blueprints/admin/routes.py:approve_product',
+            'approve request raised exception',
+            {'product_id': id, 'error_type': type(error).__name__, 'error': str(error)},
+            trace_id
+        )
+        raise
 
 
 @admin_bp.route('/products/<int:id>/reject', methods=['POST'])
 @admin_required
 def reject_product(id):
     reason = request.form.get('reason', '').strip()
-    success, message = admin_service.review_product(id, 'reject', reason)
-    flash(message, 'success' if success else 'danger')
-    return redirect(url_for('admin.product_review'))
+    trace_id = uuid.uuid4().hex
+    _report_admin_review_route(
+        'A',
+        'app/blueprints/admin/routes.py:reject_product',
+        'reject request received',
+        {'product_id': id, 'method': request.method, 'user_id': getattr(current_user, 'user_id', None), 'reason_len': len(reason)},
+        trace_id
+    )
+    try:
+        success, message = admin_service.review_product(id, 'reject', reason, trace_id=trace_id)
+        _report_admin_review_route(
+            'A',
+            'app/blueprints/admin/routes.py:reject_product',
+            'reject request completed',
+            {'product_id': id, 'success': success, 'message': message},
+            trace_id
+        )
+        flash(message, 'success' if success else 'danger')
+        return redirect(url_for('admin.product_review'))
+    except Exception as error:
+        _report_admin_review_route(
+            'B',
+            'app/blueprints/admin/routes.py:reject_product',
+            'reject request raised exception',
+            {'product_id': id, 'error_type': type(error).__name__, 'error': str(error)},
+            trace_id
+        )
+        raise
 
 
 @admin_bp.route('/products/list')

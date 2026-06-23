@@ -1,12 +1,12 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, DecimalField, TextAreaField, SelectField, SubmitField
+from wtforms import StringField, DecimalField, TextAreaField, SelectField, SubmitField, HiddenField
 from wtforms.validators import DataRequired, NumberRange, Length
 
 
 class ProductForm(FlaskForm):
     product_name = StringField('商品名称', validators=[
         DataRequired('请输入商品名称'),
-        Length(min=1, max=150, message='商品名称1~150个字符')
+        Length(min=1, max=50, message='商品名称1~50个字符')
     ])
     category_id = SelectField('商品分类', coerce=int, validators=[DataRequired('请选择分类')])
     price = DecimalField('价格', validators=[
@@ -28,5 +28,6 @@ class ProductForm(FlaskForm):
         DataRequired('请输入交易地点'),
         Length(max=255)
     ])
+    submission_token = HiddenField()
     submit_draft = SubmitField('保存草稿')
     submit_publish = SubmitField('提交审核')

@@ -33,9 +33,9 @@
                     <div class="mb-2">
                         <label class="form-label small">排序</label>
                         <select name="sort" class="form-select form-select-sm">
-                            <option value="newest" {{ 'selected' if sort == 'newest' }}>最新发布</option>
-                            <option value="price_low" {{ 'selected' if sort == 'price_low' }}>价格从低到高</option>
-                            <option value="price_high" {{ 'selected' if sort == 'price_high' }}>价格从高到低</option>
+                            <option value="latest" {{ 'selected' if sort == 'latest' }}>最新发布</option>
+                            <option value="price_asc" {{ 'selected' if sort == 'price_asc' }}>价格从低到高</option>
+                            <option value="price_desc" {{ 'selected' if sort == 'price_desc' }}>价格从高到低</option>
                         </select>
                     </div>
                     <button type="submit" class="btn btn-primary btn-sm w-100">筛选</button>
@@ -48,9 +48,7 @@
         <div class="search-results-head">
             <div>
                 <h5 class="mb-1">{% if query %}搜索 "{{ query }}"{% else %}商品列表{% endif %}</h5>
-                {% if pagination.items %}
                 <p class="text-muted small mb-0">共 {{ pagination.total }} 个结果</p>
-                {% endif %}
             </div>
         </div>
         {% if pagination.items %}

@@ -11,14 +11,14 @@
 ```bash
 pip install -r requirements.txt
 python run.py
-# 默认用 SQLite，无需装数据库
+# 默认读取 Supabase PostgreSQL 连接串
 ```
 
 ## 技术栈
 
 - **后端**: Flask 3.1, SQLAlchemy 2.0, Flask-Login
 - **前端**: Jinja2 模板 + Bootstrap 5 + 自定义 CSS
-- **数据库**: 本地 SQLite / 生产 Supabase PostgreSQL
+- **数据库**: Supabase PostgreSQL
 - **部署**: Vercel (api/index.py 入口)
 
 ## 项目结构
@@ -76,6 +76,7 @@ xiaoyuan/
 - **改样式**: 改 `app/static/css/app.css`（CSS 变量在 `:root`）
 - **改布局**: 改 `app/templates/base.html`
 - **加数据库字段**: 改 model → 本地测试 → Supabase SQL Editor 加列
+- **本地临时改用 SQLite**: 仅在确有需要时设置 `ALLOW_SQLITE_DEV=1`
 
 ## 部署相关
 

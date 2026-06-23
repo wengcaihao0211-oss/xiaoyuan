@@ -236,6 +236,7 @@ def create_app(config_name='default'):
     @app.context_processor
     def inject_globals():
         from flask_login import current_user
+        from app.services import order_service
         categories_cache = None
 
         def get_categories():
@@ -255,18 +256,31 @@ def create_app(config_name='default'):
         ctx = {
             'current_user': current_user,
             'get_categories': get_categories,
+            'order_service': order_service,
         }
         if current_user.is_authenticated:
             try:
                 from app.models.notification import Notification
                 unread = Notification.query.filter_by(
-                    receiver_id=current_user.user_id, read_status=0, deleted=0
+                    receiver_id=current_user.user_id, read_status=False, deleted=False
                 ).count()
                 ctx['unread_notification_count'] = unread
             except Exception:
+                db.session.rollback()
                 ctx['unread_notification_count'] = 0
+            
+            try:
+                from app.models.favorite import Favorite
+                favorite_count = Favorite.query.filter_by(
+                    user_id=current_user.user_id
+                ).count()
+                ctx['favorite_count'] = favorite_count
+            except Exception:
+                db.session.rollback()
+                ctx['favorite_count'] = 0
         else:
             ctx['unread_notification_count'] = 0
+            ctx['favorite_count'] = 0
         return ctx
 
     return app

@@ -38,22 +38,34 @@ def submit(product_id):
 @login_required
 def buyer_list():
     status = request.args.get('status', '')
-    orders = order_service.get_buyer_orders(current_user.user_id, status_filter=status or None)
+    keyword = request.args.get('keyword', '')
+    orders = order_service.get_buyer_orders(
+        current_user.user_id, 
+        status_filter=status or None,
+        keyword=keyword or None
+    )
     pagination = paginate(orders, per_page=20)
     return render_template('order/buyer_list.html',
                          orders=pagination.items, pagination=pagination,
-                         current_filter=status)
+                         current_filter=status, keyword=keyword)
 
 
 @order_bp.route('/seller')
 @login_required
 def seller_list():
     status = request.args.get('status', '')
-    orders = order_service.get_seller_orders(current_user.user_id, status_filter=status or None)
+    keyword = request.args.get('keyword', '')
+    pending_count = order_service.get_pending_count(current_user.user_id)
+    orders = order_service.get_seller_orders(
+        current_user.user_id, 
+        status_filter=status or None,
+        keyword=keyword or None
+    )
     pagination = paginate(orders, per_page=20)
     return render_template('order/seller_list.html',
                          orders=pagination.items, pagination=pagination,
-                         current_filter=status)
+                         current_filter=status, keyword=keyword,
+                         pending_count=pending_count)
 
 
 @order_bp.route('/<int:id>')

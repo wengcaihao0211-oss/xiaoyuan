@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+import json
+import urllib.request
 from app.extensions import db
 from app.models.user import User
 from app.models.product import Product
@@ -6,6 +8,37 @@ from app.models.orders import Order
 from app.models.category import Category
 from app.models.report import Report
 from app.models.notification import Notification
+
+
+# #region debug-point B:admin-review-service
+def _report_admin_review_service(hypothesis_id, location, message, data=None, trace_id=None):
+    _u = 'http://127.0.0.1:7777/event'
+    _s = 'admin-review-500'
+    try:
+        with open('.dbg/admin-review-500.env', encoding='utf-8') as _f:
+            for _line in _f:
+                if _line.startswith('DEBUG_SERVER_URL='):
+                    _u = _line.split('=', 1)[1].strip() or _u
+                elif _line.startswith('DEBUG_SESSION_ID='):
+                    _s = _line.split('=', 1)[1].strip() or _s
+        _payload = {
+            'sessionId': _s,
+            'runId': 'pre-fix',
+            'hypothesisId': hypothesis_id,
+            'location': location,
+            'msg': f'[DEBUG] {message}',
+            'data': data or {},
+        }
+        if trace_id:
+            _payload['traceId'] = trace_id
+        urllib.request.urlopen(urllib.request.Request(
+            _u,
+            data=json.dumps(_payload).encode(),
+            headers={'Content-Type': 'application/json'}
+        ), timeout=1).read()
+    except Exception:
+        pass
+# #endregion
 
 
 def get_dashboard_stats(start_date=None, end_date=None):
@@ -65,25 +98,67 @@ def toggle_user_status(user_id):
         return True, f'用户 {user.username} 已启用。'
 
 
-def review_product(product_id, action, reason=None):
+def review_product(product_id, action, reason=None, trace_id=None):
+    _report_admin_review_service(
+        'B',
+        'app/services/admin_service.py:review_product',
+        'review product entered',
+        {'product_id': product_id, 'action': action, 'has_reason': bool(reason and reason.strip())},
+        trace_id
+    )
     product = db.session.get(Product, product_id)
     if not product:
+        _report_admin_review_service(
+            'E',
+            'app/services/admin_service.py:review_product',
+            'product not found during review',
+            {'product_id': product_id, 'action': action},
+            trace_id
+        )
         return False, '商品不存在。'
     if product.product_status != 'PENDING_REVIEW':
+        _report_admin_review_service(
+            'E',
+            'app/services/admin_service.py:review_product',
+            'product is not pending review',
+            {'product_id': product_id, 'action': action, 'product_status': product.product_status},
+            trace_id
+        )
         return False, '该商品不在待审核状态。'
 
-    if action == 'approve':
-        product.product_status = 'ON_SALE'
-        notif = Notification(
-            receiver_id=product.seller_id, notification_type='SYSTEM',
-            title='商品审核通过',
-            content=f'您的商品「{product.product_name}」已通过审核，已自动上架。',
-            related_id=product.product_id)
-        db.session.add(notif)
-        db.session.commit()
-        return True, '商品已通过审核并上架。'
-    else:
+    try:
+        if action == 'approve':
+            product.product_status = 'ON_SALE'
+            notif = Notification(
+                receiver_id=product.seller_id, notification_type='SYSTEM',
+                title='商品审核通过',
+                content=f'您的商品「{product.product_name}」已通过审核，已自动上架。',
+                related_id=product.product_id)
+            db.session.add(notif)
+            _report_admin_review_service(
+                'B',
+                'app/services/admin_service.py:review_product',
+                'approve before commit',
+                {'product_id': product_id, 'seller_id': product.seller_id, 'new_status': product.product_status},
+                trace_id
+            )
+            db.session.commit()
+            _report_admin_review_service(
+                'B',
+                'app/services/admin_service.py:review_product',
+                'approve commit succeeded',
+                {'product_id': product_id, 'new_status': product.product_status},
+                trace_id
+            )
+            return True, '商品已通过审核并上架。'
         if not reason or len(reason.strip()) < 2:
+            _report_admin_review_service(
+                'A',
+                'app/services/admin_service.py:review_product',
+                'reject blocked by invalid reason',
+                {'product_id': product_id, 'reason_len': len((reason or '').strip())},
+                trace_id
+            )
             return False, '驳回原因至少需要2个字符。'
         product.product_status = 'REJECTED'
         notif = Notification(
@@ -92,8 +167,32 @@ def review_product(product_id, action, reason=None):
             content=f'您的商品「{product.product_name}」未通过审核。原因：{reason}',
             related_id=product.product_id)
         db.session.add(notif)
+        _report_admin_review_service(
+            'B',
+            'app/services/admin_service.py:review_product',
+            'reject before commit',
+            {'product_id': product_id, 'seller_id': product.seller_id, 'new_status': product.product_status, 'reason_len': len(reason.strip())},
+            trace_id
+        )
         db.session.commit()
+        _report_admin_review_service(
+            'B',
+            'app/services/admin_service.py:review_product',
+            'reject commit succeeded',
+            {'product_id': product_id, 'new_status': product.product_status},
+            trace_id
+        )
         return True, '商品已驳回。'
+    except Exception as error:
+        db.session.rollback()
+        _report_admin_review_service(
+            'B',
+            'app/services/admin_service.py:review_product',
+            'review commit raised exception',
+            {'product_id': product_id, 'action': action, 'error_type': type(error).__name__, 'error': str(error)},
+            trace_id
+        )
+        raise
 
 
 def admin_takedown_product(product_id, permanent=False):

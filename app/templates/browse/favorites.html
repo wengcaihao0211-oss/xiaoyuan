@@ -1,14 +1,25 @@
 {% extends "base.html" %}
 {% from "partials/_product_card.html" import product_card %}
+{% from "partials/_pagination.html" import render_pagination %}
 {% block title %}我的收藏{% endblock %}
 {% block content %}
-<h4 class="mb-3"><i class="bi bi-heart text-danger"></i> 我的收藏</h4>
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <h4><i class="bi bi-heart text-danger"></i> 我的收藏</h4>
+    {% if products %}
+    <span class="text-muted small">共 {{ pagination.total }} 件商品</span>
+    {% endif %}
+</div>
 {% if products %}
 <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-3">
     {% for p in products %}
     {{ product_card(p) }}
     {% endfor %}
 </div>
+{% if pagination and pagination.pages > 1 %}
+<div class="mt-4">
+    {{ render_pagination(pagination, 'browse.favorites') }}
+</div>
+{% endif %}
 {% else %}
 <div class="text-center py-5 text-muted">
     <i class="bi bi-heart" style="font-size:3rem"></i>

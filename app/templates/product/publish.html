@@ -11,6 +11,7 @@
             <div class="card-body">
                 <form method="post" enctype="multipart/form-data">
                     {{ form.hidden_tag() }}
+                    {{ form.submission_token() }}
                     <div class="mb-3">
                         {{ form.product_name.label(class="form-label") }}
                         {{ form.product_name(class="form-control", placeholder="请输入商品名称") }}
@@ -51,8 +52,9 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label">商品图片 (1~6张, JPG/PNG/WebP, 每张&lt;5MB)</label>
-                        <input type="file" name="images" class="form-control" multiple accept="image/jpeg,image/png,image/webp">
-                        <small class="text-muted">第一张图片将作为封面</small>
+                        <input type="file" id="productImages" name="images" class="form-control" multiple accept="image/jpeg,image/png,image/webp">
+                        <small class="text-muted">提交审核时至少需要 1 张图片，第一张图片将作为封面。</small>
+                        <div id="imagePreview" class="d-flex flex-wrap gap-2 mt-3"></div>
                     </div>
                     <div class="d-flex gap-2 publish-action-row">
                         {{ form.submit_publish(class="btn btn-primary") }}
@@ -66,8 +68,32 @@
 {% endblock %}
 {% block extra_js %}
 <script>
-document.getElementById('description').addEventListener('input', function(){
-    document.getElementById('descCount').textContent = this.value.length;
+const descInput = document.getElementById('description');
+const descCount = document.getElementById('descCount');
+const imageInput = document.getElementById('productImages');
+const imagePreview = document.getElementById('imagePreview');
+
+function renderPreview(files) {
+    imagePreview.innerHTML = '';
+    Array.from(files).slice(0, 6).forEach((file, index) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'text-center';
+        wrapper.innerHTML = `
+            <img alt="preview" class="rounded border mb-1" style="width:88px;height:88px;object-fit:cover;">
+            <div class="small text-muted">${index === 0 ? '封面' : '图片' + (index + 1)}</div>
+        `;
+        const img = wrapper.querySelector('img');
+        img.src = URL.createObjectURL(file);
+        imagePreview.appendChild(wrapper);
+    });
+}
+
+descCount.textContent = descInput.value.length;
+descInput.addEventListener('input', function () {
+    descCount.textContent = this.value.length;
+});
+imageInput.addEventListener('change', function () {
+    renderPreview(this.files);
 });
 </script>
 {% endblock %}

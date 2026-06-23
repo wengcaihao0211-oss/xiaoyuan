@@ -1,21 +1,39 @@
-{% macro render_pagination(pagination, endpoint) %}
+{% macro render_pagination(pagination, endpoint, route_values=None) %}
 {% if pagination.pages > 1 %}
+{% set args = request.args.to_dict() %}
+{% if args.pop('page', None) is not none %}{% endif %}
+{% set base_values = route_values.copy() if route_values else {} %}
+{% if base_values.update(args) is not none %}{% endif %}
 <nav aria-label="分页导航">
     <ul class="pagination justify-content-center">
         <li class="page-item {{ 'disabled' if not pagination.has_prev }}">
-            <a class="page-link" href="{{ url_for(endpoint, page=pagination.prev_num, **request.args) if pagination.has_prev else '#' }}">上一页</a>
+            {% if pagination.has_prev %}
+            {% set prev_values = base_values.copy() %}
+            {% if prev_values.update({'page': pagination.prev_num}) is not none %}{% endif %}
+            <a class="page-link" href="{{ url_for(endpoint, **prev_values) }}">上一页</a>
+            {% else %}
+            <a class="page-link" href="#">上一页</a>
+            {% endif %}
         </li>
         {% for p in pagination.iter_pages(left_edge=1, left_current=2, right_current=2, right_edge=1) %}
             {% if p %}
             <li class="page-item {{ 'active' if p == pagination.page }}">
-                <a class="page-link" href="{{ url_for(endpoint, page=p, **request.args) }}">{{ p }}</a>
+                {% set page_values = base_values.copy() %}
+                {% if page_values.update({'page': p}) is not none %}{% endif %}
+                <a class="page-link" href="{{ url_for(endpoint, **page_values) }}">{{ p }}</a>
             </li>
             {% else %}
             <li class="page-item disabled"><span class="page-link">...</span></li>
             {% endif %}
         {% endfor %}
         <li class="page-item {{ 'disabled' if not pagination.has_next }}">
-            <a class="page-link" href="{{ url_for(endpoint, page=pagination.next_num, **request.args) if pagination.has_next else '#' }}">下一页</a>
+            {% if pagination.has_next %}
+            {% set next_values = base_values.copy() %}
+            {% if next_values.update({'page': pagination.next_num}) is not none %}{% endif %}
+            <a class="page-link" href="{{ url_for(endpoint, **next_values) }}">下一页</a>
+            {% else %}
+            <a class="page-link" href="#">下一页</a>
+            {% endif %}
         </li>
     </ul>
 </nav>

@@ -3,6 +3,31 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+SQLITE_DEV_URI = 'sqlite:///' + os.path.join(BASE_DIR, 'xiaoyuan.db')
+
+
+def normalize_database_url(url):
+    """Normalize DATABASE_URL/SUPABASE_DB_URL for SQLAlchemy."""
+    if not url:
+        return ''
+
+    normalized = url.strip()
+    if normalized.startswith('postgres://'):
+        normalized = normalized.replace('postgres://', 'postgresql://', 1)
+    return normalized
+
+
+def resolve_database_url(allow_sqlite=False):
+    """Resolve the database URL, preferring Supabase/Postgres."""
+    raw_url = os.getenv('SUPABASE_DB_URL') or os.getenv('DATABASE_URL', '')
+    normalized = normalize_database_url(raw_url)
+    if normalized:
+        return normalized
+    if allow_sqlite:
+        return SQLITE_DEV_URI
+    return ''
+
 
 class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
@@ -17,21 +42,13 @@ class Config:
 
 class DevelopmentConfig(Config):
     DEBUG = True
-    SQLALCHEMY_DATABASE_URI = os.getenv(
-        'DATABASE_URL',
-        'sqlite:///' + os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), 'xiaoyuan.db'
-        )
+    SQLALCHEMY_DATABASE_URI = resolve_database_url(
+        allow_sqlite=os.getenv('ALLOW_SQLITE_DEV') == '1'
     )
-
 
 class ProductionConfig(Config):
     DEBUG = False
-    _url = os.getenv('DATABASE_URL', '')
-    if _url:
-        if _url.startswith('postgres://'):
-            _url = _url.replace('postgres://', 'postgresql://', 1)
-    SQLALCHEMY_DATABASE_URI = _url
+    SQLALCHEMY_DATABASE_URI = resolve_database_url()
     SQLALCHEMY_ENGINE_OPTIONS = {
         'pool_size': 1,
         'pool_recycle': 280,

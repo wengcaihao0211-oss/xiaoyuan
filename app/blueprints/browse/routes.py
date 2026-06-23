@@ -5,9 +5,8 @@ from sqlalchemy.orm import selectinload
 from app.extensions import db
 from app.blueprints.browse import browse_bp
 from app.models.product import Product
-from app.models.category import Category
 from app.models.favorite import Favorite
-from app.utils.pagination import paginate
+from app.services import browse_service, favorite_service
 
 
 @browse_bp.route('/')
@@ -28,52 +27,53 @@ def home():
         reverse=True,
     )[:12]
     return render_template('browse/home.html',
-                         newest_products=newest, hot_products=hottest)
+                         newest_products=newest, 
+                         hot_products=hottest,
+                         query=request.args.get('q', ''))
 
 
 @browse_bp.route('/category/<int:id>')
 def category(id):
-    cat = db.session.get(Category, id)
-    if not cat or cat.status != 'ENABLED':
-        flash('分类不存在或已禁用。', 'warning')
+    success, message, payload = browse_service.get_category_browse_payload(
+        category_id=id,
+        sort=request.args.get('sort'),
+        page=request.args.get('page'),
+    )
+    if not success:
+        flash(message, 'warning')
         return redirect(url_for('browse.home'))
-    products = Product.on_sale().filter_by(category_id=id).order_by(Product.created_at.desc())
-    pagination = paginate(products)
+
     return render_template('browse/category.html',
-                         category=cat, products=pagination.items,
-                         pagination=pagination)
+                         category=payload['category'],
+                         products=payload['products'],
+                         pagination=payload['pagination'],
+                         current_sort=payload['current_sort'])
 
 
 @browse_bp.route('/search')
 def search():
-    q = request.args.get('q', '').strip()
     min_price = request.args.get('min_price', type=float)
     max_price = request.args.get('max_price', type=float)
     condition = request.args.get('condition', '')
-    sort = request.args.get('sort', 'newest')
+    success, message, payload = browse_service.get_search_payload(
+        keyword=request.args.get('q', ''),
+        sort=request.args.get('sort'),
+        page=request.args.get('page'),
+        min_price=min_price,
+        max_price=max_price,
+        condition=condition,
+    )
+    if not success:
+        flash(message, 'warning')
 
-    query = Product.on_sale()
-    if q:
-        query = query.filter(Product.product_name.contains(q))
-    if min_price is not None:
-        query = query.filter(Product.price >= min_price)
-    if max_price is not None:
-        query = query.filter(Product.price <= max_price)
-    if condition:
-        query = query.filter_by(condition_level=condition)
-
-    if sort == 'price_low':
-        query = query.order_by(Product.price.asc())
-    elif sort == 'price_high':
-        query = query.order_by(Product.price.desc())
-    else:
-        query = query.order_by(Product.created_at.desc())
-
-    pagination = paginate(query)
     return render_template('browse/search.html',
-                         products=pagination.items, pagination=pagination,
-                         query=q, min_price=min_price, max_price=max_price,
-                         condition=condition, sort=sort)
+                         products=payload['products'],
+                         pagination=payload['pagination'],
+                         query=payload['query'],
+                         min_price=payload['min_price'],
+                         max_price=payload['max_price'],
+                         condition=payload['condition'],
+                         sort=payload['sort'])
 
 
 @browse_bp.route('/product/<int:id>')
@@ -82,63 +82,71 @@ def detail(id):
     if not product or product.deleted:
         flash('商品不存在或已下架。', 'warning')
         return redirect(url_for('browse.home'))
+    if product.product_status != 'ON_SALE':
+        can_view_unlisted = (
+            current_user.is_authenticated and (
+                current_user.user_id == product.seller_id or current_user.is_admin()
+            )
+        )
+        if not can_view_unlisted:
+            flash('商品不存在或已下架。', 'warning')
+            return redirect(url_for('browse.home'))
 
     product.view_count = (product.view_count or 0) + 1
     db.session.commit()
 
     seller = product.seller
     is_favorited = False
+    favorite_count = 0
     if current_user.is_authenticated:
-        fav = Favorite.query.filter_by(
-            user_id=current_user.user_id, product_id=product.product_id
-        ).first()
-        is_favorited = fav is not None
+        is_favorited = favorite_service.check_is_favorited(
+            current_user.user_id, product.product_id
+        )
+        favorite_count = favorite_service.get_favorite_count(
+            current_user.user_id
+        )
 
     return render_template('browse/detail.html',
                          product=product, seller=seller,
-                         is_favorited=is_favorited)
+                         is_favorited=is_favorited,
+                         favorite_count=favorite_count)
 
 
 @browse_bp.route('/favorite/toggle/<int:product_id>', methods=['POST'])
 @login_required
 def toggle_favorite(product_id):
-    product = db.session.get(Product, product_id)
-    if not product or product.deleted:
-        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            return jsonify({'success': False, 'message': '商品不存在'})
-        flash('商品不存在。', 'danger')
-        return redirect(request.referrer or url_for('browse.home'))
-
-    fav = Favorite.query.filter_by(
-        user_id=current_user.user_id, product_id=product_id
-    ).first()
-    if fav:
-        db.session.delete(fav)
-        db.session.commit()
-        msg = '已取消收藏'
-        is_fav = False
-    else:
-        fav = Favorite(user_id=current_user.user_id, product_id=product_id)
-        db.session.add(fav)
-        db.session.commit()
-        msg = '已添加收藏'
-        is_fav = True
+    """收藏或取消收藏商品"""
+    success, message, data = favorite_service.toggle_favorite(
+        user_id=current_user.user_id,
+        product_id=product_id,
+        allow_own_product=False
+    )
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-        return jsonify({'success': True, 'message': msg, 'is_favorited': is_fav})
-    flash(msg, 'success')
+        return jsonify({
+            'success': success,
+            'message': message,
+            'is_favorited': data.get('is_favorited', False),
+            'favorite_count': data.get('favorite_count', 0)
+        })
+
+    if success:
+        flash(message, 'success')
+    else:
+        flash(message, 'warning')
+
     return redirect(request.referrer or url_for('browse.detail', id=product_id))
 
 
 @browse_bp.route('/favorites')
 @login_required
 def favorites():
-    favs = Favorite.query.filter_by(user_id=current_user.user_id).order_by(
-        Favorite.created_at.desc()
-    ).all()
-    products = []
-    for fav in favs:
-        p = db.session.get(Product, fav.product_id)
-        if p and not p.deleted:
-            products.append(p)
-    return render_template('browse/favorites.html', products=products)
+    """收藏列表页面"""
+    success, message, data = favorite_service.get_favorite_list(
+        user_id=current_user.user_id,
+        page=request.args.get('page')
+    )
+
+    return render_template('browse/favorites.html',
+                         products=data.get('products', []),
+                         pagination=data.get('pagination'))
