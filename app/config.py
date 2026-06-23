@@ -45,14 +45,24 @@ class DevelopmentConfig(Config):
     SQLALCHEMY_DATABASE_URI = resolve_database_url(
         allow_sqlite=os.getenv('ALLOW_SQLITE_DEV') == '1'
     )
+    # 优化连接池配置
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        'pool_size': 5,
+        'max_overflow': 10,
+        'pool_recycle': 300,
+        'pool_pre_ping': True,
+        'pool_timeout': 30,
+    }
 
 class ProductionConfig(Config):
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = resolve_database_url()
     SQLALCHEMY_ENGINE_OPTIONS = {
-        'pool_size': 1,
+        'pool_size': 5,
+        'max_overflow': 10,
         'pool_recycle': 280,
         'pool_pre_ping': True,
+        'pool_timeout': 30,
     }
 
 

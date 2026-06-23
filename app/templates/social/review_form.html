@@ -20,7 +20,7 @@
                     </div>
                     <div class="mb-3">
                         {{ form.review_content.label(class="form-label") }}
-                        {{ form.review_content(class="form-control", rows="3", maxlength=1000) }}
+                        {{ form.review_content(class="form-control", rows="3", maxlength=500) }}
                     </div>
                     {{ form.submit(class="btn btn-primary") }}
                     <a href="{{ url_for('order.detail', id=order.order_id) }}" class="btn btn-secondary">取消</a>

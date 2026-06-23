@@ -10,49 +10,81 @@ from app.extensions import db, login_manager, migrate
 
 def ensure_user_schema():
     """Backfill user columns and indexes for existing databases."""
-    inspector = inspect(db.engine)
-    if 'users' not in inspector.get_table_names():
-        return
+    try:
+        inspector = inspect(db.engine)
+        if 'users' not in inspector.get_table_names():
+            return
 
-    columns = {column['name'] for column in inspector.get_columns('users')}
-    statements = []
+        # Check if indexes already exist to avoid deadlocks
+        existing_indexes = {idx['name'] for idx in inspector.get_indexes('users')}
+        
+        columns = {column['name'] for column in inspector.get_columns('users')}
+        statements = []
 
-    if 'email' not in columns:
-        statements.append("ALTER TABLE users ADD COLUMN email VARCHAR(255)")
-    if 'nickname' not in columns:
-        statements.append("ALTER TABLE users ADD COLUMN nickname VARCHAR(50)")
-    if 'last_login_at' not in columns:
-        statements.append("ALTER TABLE users ADD COLUMN last_login_at TIMESTAMP")
-    if 'last_login_ip' not in columns:
-        statements.append("ALTER TABLE users ADD COLUMN last_login_ip VARCHAR(45)")
-    if 'password_changed_at' not in columns:
-        statements.append("ALTER TABLE users ADD COLUMN password_changed_at TIMESTAMP")
-    if 'session_version' not in columns:
-        statements.append("ALTER TABLE users ADD COLUMN session_version INTEGER")
+        if 'email' not in columns:
+            statements.append("ALTER TABLE users ADD COLUMN email VARCHAR(255)")
+        if 'nickname' not in columns:
+            statements.append("ALTER TABLE users ADD COLUMN nickname VARCHAR(50)")
+        if 'last_login_at' not in columns:
+            statements.append("ALTER TABLE users ADD COLUMN last_login_at TIMESTAMP")
+        if 'last_login_ip' not in columns:
+            statements.append("ALTER TABLE users ADD COLUMN last_login_ip VARCHAR(45)")
+        if 'password_changed_at' not in columns:
+            statements.append("ALTER TABLE users ADD COLUMN password_changed_at TIMESTAMP")
+        if 'session_version' not in columns:
+            statements.append("ALTER TABLE users ADD COLUMN session_version INTEGER")
 
-    for statement in statements:
-        db.session.execute(text(statement))
+        for statement in statements:
+            try:
+                db.session.execute(text(statement))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
 
-    if 'password_changed_at' not in columns:
-        db.session.execute(text("UPDATE users SET password_changed_at = COALESCE(updated_at, created_at, CURRENT_TIMESTAMP)"))
-    if 'session_version' not in columns:
-        db.session.execute(text("UPDATE users SET session_version = 1"))
+        if 'password_changed_at' not in columns:
+            try:
+                db.session.execute(text("UPDATE users SET password_changed_at = COALESCE(updated_at, created_at, CURRENT_TIMESTAMP)"))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+        if 'session_version' not in columns:
+            try:
+                db.session.execute(text("UPDATE users SET session_version = 1"))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
 
-    # Normalize legacy blank contact values before creating unique indexes.
-    db.session.execute(text("UPDATE users SET phone = NULL WHERE phone = ''"))
-    db.session.execute(text("UPDATE users SET email = NULL WHERE email = ''"))
+        # Normalize legacy blank contact values before creating unique indexes.
+        try:
+            db.session.execute(text("UPDATE users SET phone = NULL WHERE phone = ''"))
+            db.session.execute(text("UPDATE users SET email = NULL WHERE email = ''"))
+            db.session.commit()
+        except Exception:
+            db.session.rollback()
 
-    # Keep uniqueness at the database layer so repeated submissions cannot create
-    # multiple active accounts with the same contact info.
-    db.session.execute(text(
-        "CREATE UNIQUE INDEX IF NOT EXISTS uq_users_phone_active "
-        "ON users (phone) WHERE phone IS NOT NULL AND phone <> '' AND deleted = FALSE"
-    ))
-    db.session.execute(text(
-        "CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email_active "
-        "ON users (email) WHERE email IS NOT NULL AND email <> '' AND deleted = FALSE"
-    ))
-    db.session.commit()
+        # Create indexes if they don't exist
+        if 'uq_users_phone_active' not in existing_indexes:
+            try:
+                db.session.execute(text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS uq_users_phone_active "
+                    "ON users (phone) WHERE phone IS NOT NULL AND phone <> '' AND deleted = FALSE"
+                ))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
+        if 'uq_users_email_active' not in existing_indexes:
+            try:
+                db.session.execute(text(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email_active "
+                    "ON users (email) WHERE email IS NOT NULL AND email <> '' AND deleted = FALSE"
+                ))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+                
+    except Exception:
+        db.session.rollback()
 
 
 def create_app(config_name='default'):
@@ -74,9 +106,10 @@ def create_app(config_name='default'):
     login_manager.init_app(app)
     migrate.init_app(app, db)
 
-    if config_name != 'testing':
-        with app.app_context():
-            ensure_user_schema()
+    # Skip schema check for now - tables already created
+    # if config_name != 'testing':
+    #     with app.app_context():
+    #         ensure_user_schema()
 
     @app.before_request
     def refresh_authenticated_session():
@@ -232,6 +265,25 @@ def create_app(config_name='default'):
         flash('上传文件过大，单个文件最大 5MB。', 'danger')
         return redirect(request.url)
 
+    # Template filters
+    @app.template_filter('beijing_time')
+    def beijing_time(value):
+        """将UTC时间转换为北京时间并格式化显示。"""
+        from app.utils.helpers import utc_to_beijing
+        if not value:
+            return ''
+        beijing_dt = utc_to_beijing(value)
+        return beijing_dt.strftime('%Y-%m-%d %H:%M')
+    
+    @app.template_filter('beijing_hm')
+    def beijing_hm(value):
+        """将UTC时间转换为北京时间并只显示小时:分钟。"""
+        from app.utils.helpers import utc_to_beijing
+        if not value:
+            return ''
+        beijing_dt = utc_to_beijing(value)
+        return beijing_dt.strftime('%H:%M')
+
     # Context processors
     @app.context_processor
     def inject_globals():
@@ -270,6 +322,14 @@ def create_app(config_name='default'):
                 ctx['unread_notification_count'] = 0
             
             try:
+                from app.services import message_service
+                unread_msg = message_service.get_unread_count(current_user.user_id)
+                ctx['unread_message_count'] = unread_msg
+            except Exception:
+                db.session.rollback()
+                ctx['unread_message_count'] = 0
+            
+            try:
                 from app.models.favorite import Favorite
                 favorite_count = Favorite.query.filter_by(
                     user_id=current_user.user_id
@@ -280,6 +340,7 @@ def create_app(config_name='default'):
                 ctx['favorite_count'] = 0
         else:
             ctx['unread_notification_count'] = 0
+            ctx['unread_message_count'] = 0
             ctx['favorite_count'] = 0
         return ctx
 

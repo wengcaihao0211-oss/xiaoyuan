@@ -16,7 +16,7 @@ class Review(db.Model):
     reviewer_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False, comment='评价人编号')
     reviewed_user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False, comment='被评价人编号')
     score = db.Column(db.SmallInteger, nullable=False, comment='评分')
-    review_content = db.Column(db.String(1000), nullable=True, comment='评价内容')
+    review_content = db.Column(db.String(500), nullable=True, comment='评价内容')
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     deleted = db.Column(db.Boolean, nullable=False, default=False, comment='逻辑删除标志')
 

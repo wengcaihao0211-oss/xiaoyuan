@@ -56,6 +56,11 @@
                             </li>
                             <li class="nav-item"><a class="nav-link position-relative" href="{{ url_for('social.chat_list') }}">
                                 <i class="bi bi-chat-dots me-1"></i>消息
+                                {% if unread_message_count > 0 %}
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.65rem">
+                                    {{ unread_message_count }}
+                                </span>
+                                {% endif %}
                             </a></li>
                             <li class="nav-item"><a class="nav-link position-relative" href="{{ url_for('notification.list') }}">
                                 <i class="bi bi-bell me-1"></i>通知
@@ -78,6 +83,7 @@
                             <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
                                 <li><a class="dropdown-item py-2" href="{{ url_for('user.profile') }}"><i class="bi bi-person me-2"></i>个人资料</a></li>
                                 <li><a class="dropdown-item py-2" href="{{ url_for('product.my_products') }}"><i class="bi bi-box-seam me-2"></i>我的商品</a></li>
+                                <li><a class="dropdown-item py-2" href="{{ url_for('social.my_reports') }}"><i class="bi bi-flag me-2"></i>我的举报</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item py-2" href="{{ url_for('auth.change_password') }}"><i class="bi bi-shield-lock me-2"></i>修改密码</a></li>
                                 <li>

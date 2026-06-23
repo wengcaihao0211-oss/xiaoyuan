@@ -15,7 +15,14 @@
                 <span class="badge bg-{{ 'success' if user.status == 'ACTIVE' else 'danger' }}">{{ '正常' if user.status == 'ACTIVE' else '已禁用' }}</span>
                 <span class="badge bg-info">{{ '管理员' if user.role == 'ADMIN' else '普通用户' }}</span>
                 <p class="text-muted mt-2">{{ user.introduction or '暂无简介' }}</p>
+                {% if current_user.is_authenticated and current_user.user_id != user.user_id and not current_user.is_admin() %}
+                <a href="{{ url_for('social.report', type='USER', id=user.user_id) }}" class="btn btn-link text-muted small">
+                    <i class="bi bi-flag"></i> 举报
+                </a>
+                {% endif %}
+                {% if current_user.is_authenticated and current_user.user_id == user.user_id %}
                 <a href="{{ url_for('user.edit_profile') }}" class="btn btn-outline-primary btn-sm">编辑资料</a>
+                {% endif %}
             </div>
         </div>
     </div>

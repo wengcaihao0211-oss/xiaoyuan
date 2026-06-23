@@ -1,38 +1,167 @@
 {% extends "base.html" %}
-{% block title %}消息{% endblock %}
+{% block title %}消息中心{% endblock %}
 {% block content %}
-<h4 class="mb-3"><i class="bi bi-chat-dots"></i> 消息</h4>
-{% if conversations %}
-<div class="list-group">
-    {% for conv in conversations %}
-    <a href="{{ url_for('social.chat_detail', user_id=conv.other_user.user_id, product_id=conv.product.product_id) }}" class="list-group-item list-group-item-action">
-        <div class="d-flex align-items-center">
-            {% if conv.other_user.avatar %}
-            <img src="{{ url_for('static', filename=conv.other_user.avatar) }}" class="rounded-circle me-3" width="48" height="48" style="object-fit:cover">
-            {% else %}
-            <i class="bi bi-person-circle text-muted me-3" style="font-size:48px"></i>
-            {% endif %}
-            <div class="flex-grow-1">
-                <div class="d-flex justify-content-between">
-                    <strong>{{ conv.other_user.username }}</strong>
-                    <small class="text-muted">{{ conv.last_time.strftime('%m-%d %H:%M') if conv.last_time else '' }}</small>
+<div class="container py-4">
+    <!-- Page Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4><i class="bi bi-chat-dots"></i> 消息中心</h4>
+        {% if total_unread > 0 %}
+        <span class="badge bg-danger">{{ total_unread }} 条未读</span>
+        {% endif %}
+    </div>
+    
+    <!-- Search and Filter Bar -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="filterForm" method="GET" class="row g-3">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <input type="text" 
+                               name="keyword" 
+                               class="form-control" 
+                               placeholder="搜索用户名或商品..."
+                               value="{{ keyword }}">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="bi bi-search"></i> 搜索
+                        </button>
+                    </div>
                 </div>
-                <small class="text-muted">关于：{{ conv.product.product_name }}</small>
-                {% if conv.last_message %}
-                <p class="mb-0 small text-truncate">{{ conv.last_message.message_content[:50] }}</p>
+                <div class="col-md-4">
+                    <div class="form-check">
+                        <input class="form-check-input" 
+                               type="checkbox" 
+                               name="unread" 
+                               id="unreadOnly"
+                               value="true"
+                               {% if unread_only %}checked{% endif %}
+                               onchange="document.getElementById('filterForm').submit()">
+                        <label class="form-check-label" for="unreadOnly">
+                            只显示未读
+                        </label>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Conversation List -->
+    {% if conversations %}
+    <div class="list-group mb-4">
+        {% for conv in conversations %}
+        <a href="{{ url_for('social.chat_detail', 
+                           user_id=conv.other_user.user_id, 
+                           product_id=conv.product.product_id) }}" 
+           class="list-group-item list-group-item-action">
+            <div class="d-flex align-items-center">
+                <!-- Avatar -->
+                <div class="me-3">
+                    {% if conv.other_user.avatar %}
+                    <img src="{{ url_for('static', filename=conv.other_user.avatar) }}" 
+                         class="rounded-circle" 
+                         width="56" 
+                         height="56" 
+                         style="object-fit: cover">
+                    {% else %}
+                    <i class="bi bi-person-circle text-muted" style="font-size: 56px"></i>
+                    {% endif %}
+                </div>
+                
+                <!-- Conversation Info -->
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <strong>{{ conv.other_user.username }}</strong>
+                        <small class="text-muted">
+                            {{ conv.last_time.strftime('%Y-%m-%d %H:%M') if conv.last_time else '' }}
+                        </small>
+                    </div>
+                    
+                    {% if conv.product %}
+                    <small class="text-muted d-block mb-1">
+                        <i class="bi bi-box"></i> 关于：{{ conv.product.product_name }}
+                    </small>
+                    {% endif %}
+                    
+                    {% if conv.last_message %}
+                    <p class="mb-0 small text-truncate text-secondary">
+                        {{ conv.last_message.message_content[:60] }}{% if conv.last_message.message_content|length > 60 %}...{% endif %}
+                    </p>
+                    {% endif %}
+                </div>
+                
+                <!-- Unread Badge -->
+                {% if conv.unread_count > 0 %}
+                <span class="badge bg-danger ms-2">{{ conv.unread_count }}</span>
                 {% endif %}
             </div>
-            {% if conv.unread_count > 0 %}
-            <span class="badge bg-danger ms-2">{{ conv.unread_count }}</span>
+        </a>
+        {% endfor %}
+    </div>
+    
+    <!-- Pagination -->
+    {% if total_pages > 1 %}
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            {% if current_page > 1 %}
+            <li class="page-item">
+                <a class="page-link" 
+                   href="{{ url_for('social.chat_list', 
+                                  page=current_page-1, 
+                                  keyword=keyword) }}{% if unread_only %}&unread=true{% endif %}">
+                    上一页
+                </a>
+            </li>
             {% endif %}
+            
+            {% for p in range(1, total_pages + 1) %}
+            <li class="page-item {% if p == current_page %}active{% endif %}">
+                <a class="page-link" 
+                   href="{{ url_for('social.chat_list', 
+                                  page=p, 
+                                  keyword=keyword) }}{% if unread_only %}&unread=true{% endif %}">
+                    {{ p }}
+                </a>
+            </li>
+            {% endfor %}
+            
+            {% if current_page < total_pages %}
+            <li class="page-item">
+                <a class="page-link" 
+                   href="{{ url_for('social.chat_list', 
+                                  page=current_page+1, 
+                                  keyword=keyword) }}{% if unread_only %}&unread=true{% endif %}">
+                    下一页
+                </a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+    
+    {% else %}
+    <!-- Empty State -->
+    <div class="text-center py-5">
+        <div class="mb-4">
+            <i class="bi bi-chat-dots text-muted" style="font-size: 4rem"></i>
         </div>
-    </a>
-    {% endfor %}
+        <h5 class="text-muted mb-2">暂无消息</h5>
+        <p class="text-muted mb-4">
+            {% if keyword or unread_only %}
+            没有找到匹配的会话，试试清除筛选条件
+            {% else %}
+            去逛逛，找到感兴趣的商品开始聊天吧！
+            {% endif %}
+        </p>
+        
+        {% if keyword or unread_only %}
+        <a href="{{ url_for('social.chat_list') }}" class="btn btn-primary">
+            <i class="bi bi-x-circle"></i> 清除筛选
+        </a>
+        {% else %}
+        <a href="{{ url_for('browse.home') }}" class="btn btn-primary">
+            <i class="bi bi-house"></i> 去首页逛逛
+        </a>
+        {% endif %}
+    </div>
+    {% endif %}
 </div>
-{% else %}
-<div class="text-center py-5 text-muted">
-    <i class="bi bi-chat-dots" style="font-size:3rem"></i>
-    <p class="mt-2">暂无消息</p>
-</div>
-{% endif %}
 {% endblock %}

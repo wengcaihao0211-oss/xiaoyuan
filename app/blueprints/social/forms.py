@@ -20,7 +20,7 @@ class ReviewForm(FlaskForm):
         (1, '⭐ 很差'),
     ], coerce=int, validators=[DataRequired('请选择评分')])
     review_content = TextAreaField('评价内容（选填）', validators=[
-        Optional(), Length(max=1000)
+        Optional(), Length(max=500)
     ])
     submit = SubmitField('提交评价')
 
@@ -36,7 +36,8 @@ class ReportForm(FlaskForm):
         ('侵权内容', '侵权内容'),
         ('其他', '其他'),
     ], validators=[DataRequired('请选择举报原因')])
-    description = TextAreaField('详细说明（选填）', validators=[
-        Optional(), Length(max=1000)
+    description = TextAreaField('详细说明（10～500字）', validators=[
+        Optional(),
+        Length(min=10, max=500, message='说明长度需要在10～500字之间')
     ])
     submit = SubmitField('提交举报')

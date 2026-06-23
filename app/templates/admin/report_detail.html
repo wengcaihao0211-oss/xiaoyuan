@@ -26,6 +26,25 @@
                     <tr><th>处理时间</th><td>{{ report.handled_at.strftime('%Y-%m-%d %H:%M:%S') if report.handled_at else '-' }}</td></tr>
                     {% endif %}
                 </table>
+                {% if report.target_snapshot %}
+                <hr>
+                <h6 class="mb-3">举报时目标快照</h6>
+                {% if report.target_type == 'PRODUCT' %}
+                <div class="p-3 bg-light rounded">
+                    <p class="mb-1"><strong>商品名称：</strong>{{ report.target_snapshot.product_name or '无' }}</p>
+                    <p class="mb-1"><strong>价格：</strong>¥{{ report.target_snapshot.price or '0.00' }}</p>
+                    <p class="mb-1"><strong>描述：</strong>{{ report.target_snapshot.description or '无' }}</p>
+                    <p class="mb-0"><strong>状态：</strong>{{ report.target_snapshot.product_status or '未知' }}</p>
+                </div>
+                {% else %}
+                <div class="p-3 bg-light rounded">
+                    <p class="mb-1"><strong>用户名：</strong>{{ report.target_snapshot.username or '无' }}</p>
+                    <p class="mb-1"><strong>昵称：</strong>{{ report.target_snapshot.nickname or '无' }}</p>
+                    <p class="mb-1"><strong>简介：</strong>{{ report.target_snapshot.introduction or '无' }}</p>
+                    <p class="mb-0"><strong>角色：</strong>{{ report.target_snapshot.role or '未知' }}</p>
+                </div>
+                {% endif %}
+                {% endif %}
             </div>
         </div>
     </div>

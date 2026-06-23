@@ -1,5 +1,6 @@
 import os
 import uuid
+from datetime import datetime, timedelta
 from flask import current_app
 from PIL import Image
 
@@ -69,3 +70,12 @@ def generate_transaction_no():
     ts = int(time.time() * 1000)
     rnd = random.randint(1000, 9999)
     return f'MOCK-{ts}-{rnd}'
+
+
+def utc_to_beijing(utc_dt):
+    """将UTC时间转换为北京时间（UTC+8）。"""
+    if not utc_dt:
+        return None
+    # 北京时区是 UTC+8
+    beijing_timedelta = timedelta(hours=8)
+    return utc_dt + beijing_timedelta

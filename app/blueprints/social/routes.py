@@ -16,8 +16,34 @@ from app.utils.pagination import paginate
 @social_bp.route('/messages')
 @login_required
 def chat_list():
-    conversations = message_service.get_conversations(current_user.user_id)
-    return render_template('social/chat_list.html', conversations=conversations)
+    # Get request parameters
+    page = request.args.get('page', 1, type=int)
+    keyword = request.args.get('keyword', '')
+    # 注意：如果 'unread' 参数不存在，默认为 false
+    # 如果 'unread' 参数存在，无论值是什么，只要不是 'false' 或 '' 就视为 true
+    unread_param = request.args.get('unread', None)
+    unread_only = False
+    if unread_param is not None:
+        unread_only = unread_param.lower() not in ['false', '0', '']
+    
+    # Get conversations with pagination, search and filter
+    conversations, total_unread, total_pages = message_service.get_conversations(
+        user_id=current_user.user_id,
+        page=page,
+        per_page=20,
+        keyword=keyword if keyword else None,
+        unread_only=unread_only
+    )
+    
+    return render_template(
+        'social/chat_list.html',
+        conversations=conversations,
+        total_unread=total_unread,
+        total_pages=total_pages,
+        current_page=page,
+        keyword=keyword,
+        unread_only=unread_only
+    )
 
 
 @social_bp.route('/messages/<int:user_id>/<int:product_id>', methods=['GET', 'POST'])
@@ -141,3 +167,13 @@ def report():
 
     return render_template('social/report_form.html',
                          form=form, target_type=target_type, target=target)
+
+
+@social_bp.route('/my-reports')
+@login_required
+def my_reports():
+    """
+    我的举报列表
+    """
+    reports = report_service.get_user_reports(current_user.user_id)
+    return render_template('social/my_reports.html', reports=reports)
