@@ -105,7 +105,7 @@
                             <a href="{{ url_for('order.submit', product_id=product.product_id) }}" class="btn btn-primary btn-detail">
                                 <i class="bi bi-lightning-charge me-1"></i>立即购买
                             </a>
-                            <a href="{{ url_for('social.send_message', product_id=product.product_id) }}" class="btn btn-outline-primary btn-detail">
+                            <a href="{{ url_for('social.chat_detail', user_id=product.seller_id, product_id=product.product_id) }}" class="btn btn-outline-primary btn-detail">
                                 <i class="bi bi-chat-dots me-1"></i>私聊
                             </a>
                             {% endif %}

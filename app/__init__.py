@@ -8,53 +8,107 @@ from app.config import config
 from app.extensions import db, login_manager, migrate
 
 
-def ensure_user_schema():
-    """Backfill user columns and indexes for existing databases."""
+def ensure_all_schemas():
+    """Auto-add missing columns for all models on startup.
+
+    Iterates over every SQLAlchemy model registered on db.Model,
+    compares the Python columns with the actual database columns,
+    and runs ALTER TABLE ADD COLUMN for any that are missing.
+    This prevents 'no such column' crashes after git pull updates models.
+    """
     try:
         inspector = inspect(db.engine)
+        table_names = set(inspector.get_table_names())
+
+        # Walk every model class registered on db.Model
+        model_classes = [
+            cls for cls in db.Model.__subclasses__()
+            if hasattr(cls, '__tablename__') and cls.__tablename__ in table_names
+        ]
+
+        for model_cls in model_classes:
+            table_name = model_cls.__tablename__
+            db_columns = {col['name'] for col in inspector.get_columns(table_name)}
+            # Collect all column names defined on the model via Column()
+            from sqlalchemy import Column
+            model_columns = {
+                attr_name for attr_name in dir(model_cls)
+                if isinstance(getattr(model_cls, attr_name, None), Column)
+            }
+
+            # Attribute-level Column objects don't include inherited mapped columns
+            # (e.g. from a base mixin), so also check the mapper columns
+            try:
+                from sqlalchemy.orm import class_mapper
+                mapper_cols = {c.key for c in class_mapper(model_cls).columns}
+            except Exception:
+                mapper_cols = set()
+
+            all_model_columns = model_columns | mapper_cols
+
+            for col_name in sorted(all_model_columns):
+                if col_name in db_columns:
+                    continue
+
+                # Look up the Column object to infer a SQL type
+                col_obj = getattr(model_cls, col_name, None)
+                col_type = _column_sql_type(col_obj)
+
+                statement = f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_type}"
+                try:
+                    db.session.execute(text(statement))
+                    db.session.commit()
+                    import logging
+                    logging.getLogger(__name__).info(
+                        'Auto-migration: %s.%s (%s) added', table_name, col_name, col_type
+                    )
+                except Exception:
+                    db.session.rollback()
+
+        # Also run the user-specific backfill logic
+        _ensure_user_schema_post_migrate(inspector)
+
+    except Exception:
+        db.session.rollback()
+
+
+def _column_sql_type(col_obj):
+    """Infer a sensible SQL type string from a SQLAlchemy Column for ALTER TABLE."""
+    if col_obj is None:
+        return 'VARCHAR(500)'
+    try:
+        col_type = col_obj.type
+        type_str = str(col_type).upper()
+        # Map common SQLA types to SQLite-compatible types
+        if 'INTEGER' in type_str or 'BIGINT' in type_str:
+            return 'INTEGER'
+        if 'BOOLEAN' in type_str:
+            return 'BOOLEAN'
+        if 'FLOAT' in type_str or 'NUMERIC' in type_str or 'DECIMAL' in type_str:
+            return 'FLOAT'
+        if 'DATETIME' in type_str or 'TIMESTAMP' in type_str or 'DATE' in type_str:
+            return 'TIMESTAMP'
+        if 'JSON' in type_str:
+            return 'TEXT'
+        if 'TEXT' in type_str or 'CLOB' in type_str:
+            return 'TEXT'
+        # For VARCHAR(n), try to preserve the length
+        if hasattr(col_type, 'length') and col_type.length:
+            return f'VARCHAR({col_type.length})'
+        return 'VARCHAR(500)'
+    except Exception:
+        return 'VARCHAR(500)'
+
+
+def _ensure_user_schema_post_migrate(inspector):
+    """Backfill user indexes and normalize legacy data."""
+    try:
         if 'users' not in inspector.get_table_names():
             return
 
-        # Check if indexes already exist to avoid deadlocks
         existing_indexes = {idx['name'] for idx in inspector.get_indexes('users')}
-        
-        columns = {column['name'] for column in inspector.get_columns('users')}
-        statements = []
 
-        if 'email' not in columns:
-            statements.append("ALTER TABLE users ADD COLUMN email VARCHAR(255)")
-        if 'nickname' not in columns:
-            statements.append("ALTER TABLE users ADD COLUMN nickname VARCHAR(50)")
-        if 'last_login_at' not in columns:
-            statements.append("ALTER TABLE users ADD COLUMN last_login_at TIMESTAMP")
-        if 'last_login_ip' not in columns:
-            statements.append("ALTER TABLE users ADD COLUMN last_login_ip VARCHAR(45)")
-        if 'password_changed_at' not in columns:
-            statements.append("ALTER TABLE users ADD COLUMN password_changed_at TIMESTAMP")
-        if 'session_version' not in columns:
-            statements.append("ALTER TABLE users ADD COLUMN session_version INTEGER")
-
-        for statement in statements:
-            try:
-                db.session.execute(text(statement))
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
-
-        if 'password_changed_at' not in columns:
-            try:
-                db.session.execute(text("UPDATE users SET password_changed_at = COALESCE(updated_at, created_at, CURRENT_TIMESTAMP)"))
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
-        if 'session_version' not in columns:
-            try:
-                db.session.execute(text("UPDATE users SET session_version = 1"))
-                db.session.commit()
-            except Exception:
-                db.session.rollback()
-
-        # Normalize legacy blank contact values before creating unique indexes.
+        # Normalize legacy blank contact values before creating unique indexes
         try:
             db.session.execute(text("UPDATE users SET phone = NULL WHERE phone = ''"))
             db.session.execute(text("UPDATE users SET email = NULL WHERE email = ''"))
@@ -62,7 +116,26 @@ def ensure_user_schema():
         except Exception:
             db.session.rollback()
 
-        # Create indexes if they don't exist
+        if 'password_changed_at' in {c['name'] for c in inspector.get_columns('users')}:
+            try:
+                db.session.execute(text(
+                    "UPDATE users SET password_changed_at = COALESCE(updated_at, created_at, CURRENT_TIMESTAMP) "
+                    "WHERE password_changed_at IS NULL"
+                ))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
+        if 'session_version' in {c['name'] for c in inspector.get_columns('users')}:
+            try:
+                db.session.execute(text(
+                    "UPDATE users SET session_version = 1 WHERE session_version IS NULL"
+                ))
+                db.session.commit()
+            except Exception:
+                db.session.rollback()
+
+        # Create conditional unique indexes (SQLite 3.35+)
         if 'uq_users_phone_active' not in existing_indexes:
             try:
                 db.session.execute(text(
@@ -82,7 +155,7 @@ def ensure_user_schema():
                 db.session.commit()
             except Exception:
                 db.session.rollback()
-                
+
     except Exception:
         db.session.rollback()
 
@@ -106,10 +179,10 @@ def create_app(config_name='default'):
     login_manager.init_app(app)
     migrate.init_app(app, db)
 
-    # Skip schema check for now - tables already created
-    # if config_name != 'testing':
-    #     with app.app_context():
-    #         ensure_user_schema()
+    # Auto-migrate missing columns on every startup (safe idempotent)
+    if config_name != 'testing':
+        with app.app_context():
+            ensure_all_schemas()
 
     @app.before_request
     def refresh_authenticated_session():

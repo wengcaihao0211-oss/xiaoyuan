@@ -9,9 +9,11 @@ app = create_app()
 with app.app_context():
     print(f'[INFO] Database backend: {db.engine.url.drivername}')
 
-    # Create all tables
+    # Create tables if not exist, then auto-migrate missing columns
     db.create_all()
-    print('[OK] All tables created.')
+    from app import ensure_all_schemas
+    ensure_all_schemas()
+    print('[OK] All tables created / migrated.')
 
     # Seed categories
     categories = [

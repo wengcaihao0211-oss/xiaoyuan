@@ -577,7 +577,7 @@ a:hover {
 .product-card .card-img-wrapper img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
@@ -708,6 +708,17 @@ a:hover {
 .condition-fair { 
   background: rgba(0, 0, 0, 0.04); 
   color: var(--text-secondary); 
+}
+
+/* ---- Detail Gallery ---- */
+.detail-gallery-stage {
+  min-height: 360px;
+  border-radius: var(--radius-lg);
+}
+.detail-gallery-image {
+  max-width: 100%;
+  max-height: 420px;
+  object-fit: contain;
 }
 
 /* Product Card Empty Placeholder */

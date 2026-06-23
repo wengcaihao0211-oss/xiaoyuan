@@ -1,69 +1,112 @@
 {% extends "base.html" %}
 {% block title %}管理后台{% endblock %}
 {% block content %}
-<h4 class="mb-3"><i class="bi bi-speedometer2"></i> 管理后台</h4>
+<div class="d-flex align-items-center gap-2 mb-4">
+    <span class="icon-circle" style="background:linear-gradient(135deg,#EEF2FF,#E0E7FF);color:#4F46E5;width:40px;height:40px;font-size:1.1rem;">
+        <i class="bi bi-speedometer2"></i>
+    </span>
+    <h4 class="mb-0">管理后台</h4>
+</div>
+
+<!-- Stat Cards -->
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-3">
-        <div class="card text-bg-primary">
-            <div class="card-body text-center">
-                <h3>{{ stats.total_users }}</h3>
-                <small>用户总数</small>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#EEF2FF,#E0E7FF);color:#4F46E5">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.total_users }}</div>
+                <div class="stat-label">用户总数</div>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card text-bg-success">
-            <div class="card-body text-center">
-                <h3>{{ stats.on_sale_products }}</h3>
-                <small>在售商品</small>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#D1FAE5,#A7F3D0);color:#059669">
+                <i class="bi bi-shop"></i>
+            </div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.on_sale_products }}</div>
+                <div class="stat-label">在售商品</div>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card text-bg-warning">
-            <div class="card-body text-center">
-                <h3>{{ stats.pending_products }}</h3>
-                <small>待审核</small>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#FEF3C7,#FDE68A);color:#B45309">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.pending_products }}</div>
+                <div class="stat-label">待审核</div>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-3">
-        <div class="card text-bg-danger">
-            <div class="card-body text-center">
-                <h3>{{ stats.pending_reports }}</h3>
-                <small>待处理举报</small>
+        <div class="stat-card">
+            <div class="stat-icon" style="background:linear-gradient(135deg,#FEE2E2,#FECACA);color:#DC2626">
+                <i class="bi bi-flag-fill"></i>
+            </div>
+            <div class="stat-body">
+                <div class="stat-value">{{ stats.pending_reports }}</div>
+                <div class="stat-label">待处理举报</div>
             </div>
         </div>
     </div>
 </div>
-<div class="row">
+
+<div class="row g-3">
+    <!-- Order Overview -->
     <div class="col-md-6">
-        <div class="card shadow-sm mb-3">
-            <div class="card-header"><h6 class="mb-0">订单概览（30天）</h6></div>
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-transparent border-0 pt-3 pb-0">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-graph-up me-2"></i>订单概览（30天）</h6>
+            </div>
             <div class="card-body">
-                <table class="table table-sm">
-                    <tr><td>总订单</td><td><strong>{{ stats.total_orders }}</strong></td></tr>
-                    <tr><td>已完成</td><td><strong>{{ stats.completed_orders }}</strong></td></tr>
-                    <tr><td>完成率</td><td><strong>{{ stats.completion_rate }}%</strong></td></tr>
-                </table>
+                <div class="d-flex gap-3 text-center">
+                    <div class="flex-fill p-3 rounded-3" style="background:var(--primary-light)">
+                        <div class="fs-4 fw-extrabold" style="color:var(--primary)">{{ stats.total_orders }}</div>
+                        <small class="text-muted">总订单</small>
+                    </div>
+                    <div class="flex-fill p-3 rounded-3" style="background:var(--success-light)">
+                        <div class="fs-4 fw-extrabold" style="color:var(--success)">{{ stats.completed_orders }}</div>
+                        <small class="text-muted">已完成</small>
+                    </div>
+                    <div class="flex-fill p-3 rounded-3" style="background:var(--accent-light)">
+                        <div class="fs-4 fw-extrabold" style="color:var(--accent-dark)">{{ stats.completion_rate }}%</div>
+                        <small class="text-muted">完成率</small>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
+
+    <!-- Quick Actions -->
     <div class="col-md-6">
-        <div class="card shadow-sm mb-3">
-            <div class="card-header"><h6 class="mb-0">快捷操作</h6></div>
+        <div class="card shadow-sm border-0 rounded-4">
+            <div class="card-header bg-transparent border-0 pt-3 pb-0">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-lightning-charge me-2"></i>快捷操作</h6>
+            </div>
             <div class="card-body d-grid gap-2">
-                <a href="{{ url_for('admin.product_review') }}" class="btn btn-outline-warning">待审核商品 ({{ stats.pending_products }})</a>
-                <a href="{{ url_for('admin.report_list') }}" class="btn btn-outline-danger">待处理举报 ({{ stats.pending_reports }})</a>
-                <a href="{{ url_for('admin.appeal_list') }}" class="btn btn-outline-warning">
+                <a href="{{ url_for('admin.product_review') }}" class="admin-action-btn" style="--accent:#D97706">
+                    <i class="bi bi-box-seam"></i> 待审核商品 <span class="badge rounded-pill bg-warning text-dark ms-auto">{{ stats.pending_products }}</span>
+                </a>
+                <a href="{{ url_for('admin.report_list') }}" class="admin-action-btn" style="--accent:#DC2626">
+                    <i class="bi bi-flag"></i> 待处理举报 <span class="badge rounded-pill bg-danger ms-auto">{{ stats.pending_reports }}</span>
+                </a>
+                <a href="{{ url_for('admin.appeal_list') }}" class="admin-action-btn" style="--accent:#EA580C">
                     <i class="bi bi-exclamation-triangle"></i> 申诉管理
                 </a>
-                <a href="{{ url_for('admin.ai_review_dashboard') }}" class="btn btn-outline-success">
+                <a href="{{ url_for('admin.ai_review_dashboard') }}" class="admin-action-btn" style="--accent:#7C3AED">
                     <i class="bi bi-robot"></i> AI审核管理
                 </a>
-                <a href="{{ url_for('admin.user_list') }}" class="btn btn-outline-primary">用户管理</a>
-                <a href="{{ url_for('admin.categories') }}" class="btn btn-outline-info">分类管理</a>
-                <a href="{{ url_for('admin.statistics') }}" class="btn btn-outline-secondary">数据统计</a>
+                <a href="{{ url_for('admin.user_list') }}" class="admin-action-btn" style="--accent:#4F46E5">
+                    <i class="bi bi-people"></i> 用户管理
+                </a>
+                <a href="{{ url_for('admin.categories') }}" class="admin-action-btn" style="--accent:#0891B2">
+                    <i class="bi bi-grid"></i> 分类管理
+                </a>
             </div>
         </div>
     </div>
