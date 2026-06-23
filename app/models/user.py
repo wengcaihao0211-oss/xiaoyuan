@@ -6,15 +6,24 @@ from app.extensions import db
 
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
+    __table_args__ = (
+        db.Index('idx_users_status_deleted', 'status', 'deleted'),
+    )
 
     user_id = db.Column(db.Integer, primary_key=True, autoincrement=True, comment='用户编号')
     username = db.Column(db.String(50), unique=True, nullable=False, comment='用户名')
     password_hash = db.Column(db.String(255), nullable=False, comment='密码哈希')
     avatar = db.Column(db.String(500), nullable=True, comment='头像地址')
-    phone = db.Column(db.String(30), nullable=True, comment='联系方式')
+    phone = db.Column(db.String(30), nullable=True, comment='手机号')
+    email = db.Column(db.String(255), nullable=True, comment='邮箱')
+    nickname = db.Column(db.String(50), nullable=True, comment='昵称')
     introduction = db.Column(db.String(500), nullable=True, comment='个人简介')
     role = db.Column(db.String(20), nullable=False, default='USER', comment='用户角色')
     status = db.Column(db.String(20), nullable=False, default='ACTIVE', comment='账号状态')
+    last_login_at = db.Column(db.DateTime, nullable=True, comment='最后登录时间')
+    last_login_ip = db.Column(db.String(45), nullable=True, comment='最后登录IP')
+    password_changed_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, comment='密码最近修改时间')
+    session_version = db.Column(db.Integer, nullable=False, default=1, comment='会话版本号')
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, comment='创建时间')
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow, comment='更新时间')
     deleted = db.Column(db.Boolean, nullable=False, default=False, comment='逻辑删除标志')
@@ -36,6 +45,7 @@ class User(UserMixin, db.Model):
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
+        self.password_changed_at = datetime.utcnow()
 
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)

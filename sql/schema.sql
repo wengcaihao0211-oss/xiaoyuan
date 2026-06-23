@@ -21,14 +21,22 @@ CREATE TABLE `user` (
   `password_hash` VARCHAR(255) NOT NULL COMMENT '密码哈希',
   `avatar` VARCHAR(500) DEFAULT NULL COMMENT '头像地址',
   `phone` VARCHAR(30) DEFAULT NULL COMMENT '联系方式',
+  `email` VARCHAR(255) DEFAULT NULL COMMENT '邮箱',
+  `nickname` VARCHAR(50) DEFAULT NULL COMMENT '昵称',
   `introduction` VARCHAR(500) DEFAULT NULL COMMENT '个人简介',
   `role` VARCHAR(20) NOT NULL DEFAULT 'USER' COMMENT '用户角色',
   `status` VARCHAR(20) NOT NULL DEFAULT 'ACTIVE' COMMENT '账号状态',
+  `last_login_at` DATETIME DEFAULT NULL COMMENT '最后登录时间',
+  `last_login_ip` VARCHAR(45) DEFAULT NULL COMMENT '最后登录IP',
+  `password_changed_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '密码最近修改时间',
+  `session_version` INT NOT NULL DEFAULT 1 COMMENT '会话版本号',
   `created_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `deleted` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '逻辑删除标志',
   PRIMARY KEY (`user_id`),
   UNIQUE KEY `uk_user_username` (`username`),
+  UNIQUE KEY `uk_user_phone` (`phone`),
+  UNIQUE KEY `uk_user_email` (`email`),
   KEY `idx_user_status_deleted` (`status`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户表';
 

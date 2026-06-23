@@ -10,7 +10,8 @@
                 {% else %}
                 <i class="bi bi-person-circle text-muted" style="font-size:120px"></i>
                 {% endif %}
-                <h4>{{ user.username }}</h4>
+                <h4>{{ user.nickname or user.username }}</h4>
+                <div class="text-muted small mb-2">用户名：{{ user.username }}</div>
                 <span class="badge bg-{{ 'success' if user.status == 'ACTIVE' else 'danger' }}">{{ '正常' if user.status == 'ACTIVE' else '已禁用' }}</span>
                 <span class="badge bg-info">{{ '管理员' if user.role == 'ADMIN' else '普通用户' }}</span>
                 <p class="text-muted mt-2">{{ user.introduction or '暂无简介' }}</p>
@@ -23,9 +24,14 @@
             <div class="card-header"><h5 class="mb-0">个人信息</h5></div>
             <div class="card-body">
                 <table class="table">
-                    <tr><th width="120">用户名</th><td>{{ user.username }}</td></tr>
+                    <tr><th width="120">用户编号</th><td>{{ user.user_id }}</td></tr>
+                    <tr><th>用户名</th><td>{{ user.username }}</td></tr>
+                    <tr><th>昵称</th><td>{{ user.nickname or '未设置' }}</td></tr>
                     <tr><th>手机号</th><td>{{ user.phone or '未设置' }}</td></tr>
+                    <tr><th>邮箱</th><td>{{ user.email or '未设置' }}</td></tr>
+                    <tr><th>个人简介</th><td>{{ user.introduction or '未设置' }}</td></tr>
                     <tr><th>注册时间</th><td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>
+                    <tr><th>更新时间</th><td>{{ user.updated_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>
                 </table>
             </div>
         </div>

@@ -7,6 +7,8 @@ from app.models.category import Category
 app = create_app()
 
 with app.app_context():
+    print(f'[INFO] Database backend: {db.engine.url.drivername}')
+
     # Create all tables
     db.create_all()
     print('[OK] All tables created.')
@@ -35,6 +37,8 @@ with app.app_context():
             role='ADMIN',
             status='ACTIVE',
             phone='13800000000',
+            email='admin@example.com',
+            nickname='系统管理员',
             introduction='系统管理员'
         )
         admin.set_password('admin123')
@@ -52,6 +56,8 @@ with app.app_context():
             role='USER',
             status='ACTIVE',
             phone='13900000001',
+            email='testuser@example.com',
+            nickname='测试用户',
             introduction='test user'
         )
         test_user.set_password('test123')

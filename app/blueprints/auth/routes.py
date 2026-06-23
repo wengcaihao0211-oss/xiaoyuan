@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, request, session
+from flask import flash, redirect, render_template, request, session, url_for
 from flask_login import login_user, logout_user, login_required, current_user
 from app.blueprints.auth import auth_bp
 from app.blueprints.auth.forms import (
@@ -15,10 +15,14 @@ def login():
     form = LoginForm()
     if form.validate_on_submit():
         success, message, user = auth_service.authenticate_user(
-            form.username.data, form.password.data
+            form.username.data,
+            form.password.data,
+            login_ip=request.headers.get('X-Forwarded-For', request.remote_addr)
         )
         if success:
-            login_user(user, remember=True)
+            session.permanent = True
+            login_user(user, remember=False)
+            session['session_version'] = user.session_version
             flash(message, 'success')
             next_page = request.args.get('next')
             if next_page and next_page.startswith('/'):
@@ -35,23 +39,37 @@ def register():
     if current_user.is_authenticated:
         return redirect(url_for('browse.home'))
     form = RegisterForm()
-    if form.validate_on_submit():
+    action = request.form.get('action')
+    if request.method == 'POST' and action == 'send_otp':
+        success, message = auth_service.send_register_otp(
+            phone=form.phone.data,
+            email=form.email.data
+        )
+        flash(message, 'success' if success else 'danger')
+    elif form.validate_on_submit():
         success, message, user = auth_service.register_user(
-            form.username.data, form.password.data, form.phone.data
+            username=form.username.data,
+            password=form.password.data,
+            phone=form.phone.data,
+            email=form.email.data,
+            nickname=form.nickname.data,
+            otp=form.otp.data
         )
         if success:
-            login_user(user, remember=True)
             flash(message, 'success')
-            return redirect(url_for('browse.home'))
+            return redirect(url_for('auth.login'))
         flash(message, 'danger')
     return render_template('auth/register.html', form=form)
 
 
-@auth_bp.route('/logout')
+@auth_bp.route('/logout', methods=['GET', 'POST'])
 def logout():
+    session.pop('reset_username', None)
+    session.pop('reset_identifier', None)
+    session.pop('session_version', None)
     logout_user()
     flash('您已退出登录。', 'info')
-    return redirect(url_for('browse.home'))
+    return redirect(url_for('browse.home'), code=303)
 
 
 @auth_bp.route('/forgot-password', methods=['GET', 'POST'])
@@ -60,9 +78,9 @@ def forgot_password():
         return redirect(url_for('browse.home'))
     form = ForgotPasswordForm()
     if form.validate_on_submit():
-        otp = auth_service.generate_otp(form.username.data)
-        flash(f'验证码已生成（演示模式）：{otp}', 'info')
-        session['reset_username'] = form.username.data
+        success, message = auth_service.send_password_reset_otp(form.username.data)
+        flash(message, 'success' if success else 'warning')
+        session['reset_identifier'] = form.username.data
         return redirect(url_for('auth.reset_password'))
     return render_template('auth/forgot_password.html', form=form)
 
@@ -71,22 +89,22 @@ def forgot_password():
 def reset_password():
     if current_user.is_authenticated:
         return redirect(url_for('browse.home'))
-    username = session.get('reset_username', '')
-    if not username:
-        flash('请先输入用户名获取验证码。', 'warning')
+    identifier = session.get('reset_identifier') or session.get('reset_username', '')
+    if not identifier:
+        flash('请先输入账号获取验证码。', 'warning')
         return redirect(url_for('auth.forgot_password'))
-    form = ResetPasswordForm(username=username)
+    form = ResetPasswordForm(username=identifier)
     if form.validate_on_submit():
-        success, message = auth_service.verify_otp(username, form.otp.data)
+        success, message = auth_service.reset_password(
+            identifier,
+            form.otp.data,
+            form.new_password.data
+        )
         if success:
-            success2, message2 = auth_service.reset_password(
-                username, form.new_password.data
-            )
-            if success2:
-                session.pop('reset_username', None)
-                flash(message2, 'success')
-                return redirect(url_for('auth.login'))
-            flash(message2, 'danger')
+            session.pop('reset_username', None)
+            session.pop('reset_identifier', None)
+            flash(message, 'success')
+            return redirect(url_for('auth.login'))
         else:
             flash(message, 'danger')
     return render_template('auth/reset_password.html', form=form)
@@ -102,5 +120,6 @@ def change_password():
         )
         flash(message, 'success' if success else 'danger')
         if success:
+            session['session_version'] = current_user.session_version
             return redirect(url_for('user.profile'))
     return render_template('auth/change_password.html', form=form)

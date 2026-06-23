@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, session
 from flask_login import login_user, logout_user, login_required, current_user
 from app.extensions import db
 from app.blueprints.admin import admin_bp
@@ -26,10 +26,14 @@ def login():
     form = AdminLoginForm()
     if form.validate_on_submit():
         success, message, user = auth_service.authenticate_user(
-            form.username.data, form.password.data
+            form.username.data,
+            form.password.data,
+            login_ip=request.headers.get('X-Forwarded-For', request.remote_addr)
         )
         if success and user.is_admin():
-            login_user(user, remember=True)
+            session.permanent = True
+            login_user(user, remember=False)
+            session['session_version'] = user.session_version
             flash('管理员登录成功。', 'success')
             return redirect(url_for('admin.dashboard'))
         if success and not user.is_admin():
@@ -39,10 +43,13 @@ def login():
     return render_template('admin/login.html', form=form)
 
 
-@admin_bp.route('/logout')
+@admin_bp.route('/logout', methods=['GET', 'POST'])
 def logout():
+    session.pop('reset_username', None)
+    session.pop('reset_identifier', None)
+    session.pop('session_version', None)
     logout_user()
-    return redirect(url_for('admin.login'))
+    return redirect(url_for('admin.login'), code=303)
 
 
 # ---- Dashboard (F50 partial) ----

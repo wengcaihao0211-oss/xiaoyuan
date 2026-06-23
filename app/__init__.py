@@ -1,21 +1,98 @@
+from datetime import timedelta
 from time import perf_counter
 
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, session
 from sqlalchemy import inspect, text
 from sqlalchemy.orm import selectinload
 from app.config import config
 from app.extensions import db, login_manager, migrate
 
 
+def ensure_user_schema():
+    """Backfill user columns and indexes for existing databases."""
+    inspector = inspect(db.engine)
+    if 'users' not in inspector.get_table_names():
+        return
+
+    columns = {column['name'] for column in inspector.get_columns('users')}
+    statements = []
+
+    if 'email' not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN email VARCHAR(255)")
+    if 'nickname' not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN nickname VARCHAR(50)")
+    if 'last_login_at' not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN last_login_at TIMESTAMP")
+    if 'last_login_ip' not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN last_login_ip VARCHAR(45)")
+    if 'password_changed_at' not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN password_changed_at TIMESTAMP")
+    if 'session_version' not in columns:
+        statements.append("ALTER TABLE users ADD COLUMN session_version INTEGER")
+
+    for statement in statements:
+        db.session.execute(text(statement))
+
+    if 'password_changed_at' not in columns:
+        db.session.execute(text("UPDATE users SET password_changed_at = COALESCE(updated_at, created_at, CURRENT_TIMESTAMP)"))
+    if 'session_version' not in columns:
+        db.session.execute(text("UPDATE users SET session_version = 1"))
+
+    # Normalize legacy blank contact values before creating unique indexes.
+    db.session.execute(text("UPDATE users SET phone = NULL WHERE phone = ''"))
+    db.session.execute(text("UPDATE users SET email = NULL WHERE email = ''"))
+
+    # Keep uniqueness at the database layer so repeated submissions cannot create
+    # multiple active accounts with the same contact info.
+    db.session.execute(text(
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_users_phone_active "
+        "ON users (phone) WHERE phone IS NOT NULL AND phone <> '' AND deleted = FALSE"
+    ))
+    db.session.execute(text(
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_users_email_active "
+        "ON users (email) WHERE email IS NOT NULL AND email <> '' AND deleted = FALSE"
+    ))
+    db.session.commit()
+
+
 def create_app(config_name='default'):
     """Application factory."""
     app = Flask(__name__)
     app.config.from_object(config.get(config_name, config['default']))
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
+    app.config['SESSION_REFRESH_EACH_REQUEST'] = True
+
+    if config_name != 'testing' and not app.config.get('SQLALCHEMY_DATABASE_URI'):
+        raise RuntimeError(
+            'Missing DATABASE_URL or SUPABASE_DB_URL. '
+            'Set your Supabase Postgres connection string before starting the app. '
+            'For temporary local fallback only, set ALLOW_SQLITE_DEV=1.'
+        )
 
     # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)
     migrate.init_app(app, db)
+
+    if config_name != 'testing':
+        with app.app_context():
+            ensure_user_schema()
+
+    @app.before_request
+    def refresh_authenticated_session():
+        from flask_login import current_user
+        if current_user.is_authenticated:
+            session_version = session.get('session_version')
+            if session_version != current_user.session_version:
+                from flask import flash, redirect, url_for
+                from flask_login import logout_user
+                session.pop('session_version', None)
+                logout_user()
+                flash('密码已更新，请重新登录。', 'warning')
+                return redirect(url_for('auth.login'))
+            session.permanent = True
+            session['session_version'] = current_user.session_version
+            session.modified = True
 
     # Health check (no DB needed)
     @app.route('/ping')

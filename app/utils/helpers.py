@@ -33,14 +33,15 @@ def save_upload(file_storage, subfolder, prefix=''):
 
     try:
         img = Image.open(file_storage)
+        img.verify()
+        file_storage.seek(0)
+        img = Image.open(file_storage)
         img.thumbnail((1200, 1200), Image.LANCZOS)
         if img.mode in ('RGBA', 'P'):
             img = img.convert('RGB')
         img.save(filepath, quality=85, optimize=True)
     except Exception:
-        # If Pillow can't process it, save the raw file
-        file_storage.seek(0)
-        file_storage.save(filepath)
+        raise ValueError('上传文件不是有效的图片。')
 
     return os.path.join('uploads', subfolder, filename).replace('\\', '/')
 

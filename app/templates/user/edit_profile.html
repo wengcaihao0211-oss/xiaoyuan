@@ -7,6 +7,16 @@
             <div class="card-header"><h5 class="mb-0">编辑个人资料</h5></div>
             <div class="card-body">
                 <form method="post" enctype="multipart/form-data">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">用户编号</label>
+                            <input type="text" class="form-control" value="{{ user.user_id }}" readonly>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">用户名</label>
+                            <input type="text" class="form-control" value="{{ user.username }}" readonly>
+                        </div>
+                    </div>
                     <div class="mb-3 text-center">
                         {% if user.avatar %}
                         <img src="{{ url_for('static', filename=user.avatar) }}" class="rounded-circle mb-2" width="100" height="100" style="object-fit:cover">
@@ -17,14 +27,34 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label">手机号</label>
-                        <input type="text" name="phone" class="form-control" value="{{ user.phone or '' }}" maxlength="30">
+                        <label class="form-label">昵称</label>
+                        <input type="text" name="nickname" class="form-control" value="{{ form_data.nickname }}" maxlength="20" required>
+                        <div class="form-text">昵称长度需为 1~20 字。</div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">手机号</label>
+                            <input type="text" name="phone" class="form-control" value="{{ form_data.phone }}" maxlength="30" placeholder="请输入 11 位手机号">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">邮箱</label>
+                            <input type="email" name="email" class="form-control" value="{{ form_data.email }}" maxlength="255" placeholder="请输入常用邮箱">
+                        </div>
                     </div>
                     <div class="mb-3">
                         <label class="form-label">个人简介</label>
-                        <textarea name="introduction" class="form-control" rows="3" maxlength="500">{{ user.introduction or '' }}</textarea>
+                        <textarea name="introduction" class="form-control" rows="4" maxlength="200">{{ form_data.introduction }}</textarea>
+                        <div class="form-text">简介不能超过 200 字，系统会自动过滤危险脚本。</div>
                     </div>
-                    <button type="submit" class="btn btn-primary">保存修改</button>
+                    <div class="mb-3">
+                        <label class="form-label">联系方式验证码</label>
+                        <div class="input-group">
+                            <input type="text" name="contact_otp" class="form-control" value="{{ form_data.contact_otp }}" maxlength="6" placeholder="修改手机号或邮箱时必填">
+                            <button type="submit" name="action" value="send_contact_otp" class="btn btn-outline-primary">获取验证码</button>
+                        </div>
+                        <div class="form-text">当手机号或邮箱发生变化时，请先获取并填写验证码后再保存。</div>
+                    </div>
+                    <button type="submit" name="action" value="save" class="btn btn-primary">保存修改</button>
                     <a href="{{ url_for('user.profile') }}" class="btn btn-secondary">取消</a>
                 </form>
             </div>

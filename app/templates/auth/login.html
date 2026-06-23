@@ -45,17 +45,17 @@
             <div class="auth-form-header">
                 <span class="auth-eyebrow">账号登录</span>
                 <h3>登录你的校园账号</h3>
-                <p>输入用户名和密码，继续浏览、沟通和交易。</p>
+                <p>输入用户名、手机号或邮箱及密码，继续浏览、沟通和交易。</p>
             </div>
 
             <form method="post" novalidate>
                 {{ form.hidden_tag() }}
 
                 <div class="mb-3">
-                    <label class="form-label">用户名</label>
+                    <label class="form-label">账号</label>
                     <div class="auth-input-wrap">
                         <i class="bi bi-person"></i>
-                        {{ form.username(class="form-control form-control-lg", placeholder="请输入用户名") }}
+                        {{ form.username(class="form-control form-control-lg", placeholder="请输入用户名、手机号或邮箱") }}
                     </div>
                     {% for err in form.username.errors %}
                     <div class="auth-field-error">{{ err }}</div>
@@ -78,6 +78,9 @@
 
                 <div class="auth-meta">
                     <span><i class="bi bi-shield-lock"></i> 连续输错 5 次将临时锁定账号</span>
+                </div>
+                <div class="auth-meta">
+                    <span><i class="bi bi-clock-history"></i> 登录后 30 分钟无操作将自动失效</span>
                 </div>
 
                 <div class="d-grid mt-4">
