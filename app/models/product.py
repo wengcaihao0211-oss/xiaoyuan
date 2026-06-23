@@ -34,6 +34,7 @@ class Product(db.Model):
     favorites = db.relationship('Favorite', backref='product', lazy='dynamic')
     orders = db.relationship('Order', backref='product', lazy='dynamic')
     messages = db.relationship('Message', backref='product', lazy='dynamic')
+    comments = db.relationship('ProductComment', back_populates='product', lazy='dynamic')
 
     @classmethod
     def active(cls):

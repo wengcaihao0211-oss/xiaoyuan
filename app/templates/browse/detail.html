@@ -11,8 +11,8 @@
 
 <div class="row g-4">
     <!-- Product Images -->
-    <div class="col-lg-6">
-        <div class="card border-0 shadow-sm overflow-hidden">
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm overflow-hidden glass">
             {% if product.image_list %}
             <div id="productCarousel" class="carousel slide" data-bs-ride="false">
                 <div class="carousel-inner">
@@ -52,79 +52,240 @@
     </div>
 
     <!-- Product Info -->
-    <div class="col-lg-6">
-        <div class="card border-0 shadow-sm h-100">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100 glass">
             <div class="card-body p-4 d-flex flex-column">
-                <div>
-                    <div class="d-flex gap-2 mb-2">
-                        <span class="badge bg-{{ 'success' if product.condition_level == '全新' else 'warning' if '九' in product.condition_level else 'secondary' }}">
-                            {{ product.condition_level }}
-                        </span>
-                        <span class="badge bg-info">{{ product.category.category_name }}</span>
-                    </div>
-                    <h3 class="fw-bold mb-2">{{ product.product_name }}</h3>
-                    <div class="price-display mb-3">
-                        <span class="symbol">¥</span>{{ '%.2f'|format(product.price) }}
-                    </div>
-                    <div class="d-flex gap-4 text-muted small mb-4 detail-meta-row">
-                        <span><i class="bi bi-eye me-1"></i>{{ product.view_count }} 次浏览</span>
-                        <span><i class="bi bi-geo-alt me-1"></i>{{ product.trade_location }}</span>
-                        <span>{{ product.created_at.strftime('%Y-%m-%d') }}</span>
-                    </div>
+                <!-- 1. Seller Info with Clickable Links -->
+                <div class="d-flex align-items-center mb-4 seller-info-detail">
+                    <a href="{{ url_for('user.view_profile', user_id=seller.user_id) }}" class="text-decoration-none d-flex align-items-center">
+                        {% if seller.avatar %}
+                        <img src="{{ url_for('static', filename=seller.avatar) }}" class="rounded-circle seller-avatar-detail" style="object-fit:cover">
+                        {% else %}
+                        <span class="avatar-placeholder seller-avatar-detail" style="font-size:1.3rem">{{ seller.username[0] }}</span>
+                        {% endif %}
+                        <div class="ms-3">
+                            <span class="fw-bold text-dark">{{ seller.username }}</span>
+                        </div>
+                    </a>
+                </div>
 
+                <!-- 2. Product Title -->
+                <h3 class="fw-bold mb-3 text-dark">{{ product.product_name }}</h3>
+                
+                <!-- Price Display -->
+                <div class="price-display mb-4">
+                    <span class="symbol">¥</span>{{ '%.2f'|format(product.price) }}
+                </div>
+                
+                <!-- 3. Condition + Category Tags -->
+                <div class="d-flex gap-2 mb-3">
+                    <span class="badge bg-{{ 'success' if product.condition_level == '全新' else 'warning' if '九' in product.condition_level else 'secondary' }}">
+                        {{ product.condition_level }}
+                    </span>
+                    <span class="badge bg-info">{{ product.category.category_name }}</span>
+                </div>
+                
+                <!-- Trade Info -->
+                <div class="d-flex gap-4 text-muted small mb-4 detail-meta-row">
+                    <span><i class="bi bi-geo-alt me-1"></i>{{ product.trade_location }}</span>
+                    <span>{{ product.created_at.strftime('%Y-%m-%d') }}</span>
+                </div>
+
+                <!-- 4. Product Description -->
+                <div class="mb-4">
                     <h6 class="fw-bold text-uppercase small text-muted mb-2">商品描述</h6>
                     <p class="text-secondary lh-lg">{{ product.description }}</p>
                 </div>
 
-                <!-- Seller -->
-                <div class="seller-card mt-3 mb-3">
-                    <div class="d-flex align-items-center gap-3">
-                        {% if seller.avatar %}
-                        <img src="{{ url_for('static', filename=seller.avatar) }}" class="rounded-circle" width="48" height="48" style="object-fit:cover">
-                        {% else %}
-                        <span class="avatar-placeholder" style="width:48px;height:48px;font-size:1.1rem">{{ seller.username[0] }}</span>
-                        {% endif %}
-                        <div>
-                            <strong>{{ seller.username }}</strong>
-                            <div class="small text-muted">
-                                {{ seller.sold_count }} 笔成交
-                                {% if seller.avg_rating %}
-                                · <i class="bi bi-star-fill text-warning"></i> {{ seller.avg_rating }}
-                                {% endif %}
+                <!-- Action Buttons - Moved above comments -->
+                <div class="mb-4 detail-action-group">
+                    {% if current_user.is_authenticated and not current_user.is_admin() %}
+                        <div class="d-flex gap-2 flex-wrap">
+                            {% if product.seller_id != current_user.user_id and product.product_status == 'ON_SALE' %}
+                            <a href="{{ url_for('order.submit', product_id=product.product_id) }}" class="btn btn-primary btn-detail">
+                                <i class="bi bi-lightning-charge me-1"></i>立即购买
+                            </a>
+                            <a href="{{ url_for('social.send_message', product_id=product.product_id) }}" class="btn btn-outline-primary btn-detail">
+                                <i class="bi bi-chat-dots me-1"></i>私聊
+                            </a>
+                            {% endif %}
+                            {% if product.product_status == 'ON_SALE' %}
+                            <button class="btn btn-outline-danger btn-detail btn-fav {{ 'active' if is_favorited }}" data-product-id="{{ product.product_id }}">
+                                <i class="bi {{ 'bi-heart-fill' if is_favorited else 'bi-heart' }} me-1"></i>收藏
+                            </button>
+                            {% endif %}
+                            {% if product.seller_id != current_user.user_id %}
+                            <a href="{{ url_for('social.report', type='PRODUCT', id=product.product_id) }}" class="btn btn-outline-secondary btn-detail">
+                                <i class="bi bi-flag me-1"></i>举报
+                            </a>
+                            {% endif %}
+                        </div>
+                    {% elif not current_user.is_authenticated %}
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-detail w-100">登录后购买</a>
+                    {% endif %}
+                </div>
+
+                <!-- Comment Section -->
+                <div class="comment-section">
+                    <h6 class="fw-bold text-uppercase small text-muted mb-3">
+                        <i class="bi bi-chat-square-text me-1"></i>商品留言
+                    </h6>
+                    
+                    <!-- Comment Input - Same as navbar search -->
+                    {% if current_user.is_authenticated %}
+                    <form method="post" class="mb-4">
+                        <div class="navbar-search-box d-flex align-items-center">
+                            <input type="text" name="comment_content" class="navbar-search-input form-control" 
+                                   placeholder="说点什么吧..." required>
+                            <button type="submit" class="navbar-search-btn">
+                                <i class="bi bi-send"></i>
+                            </button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-info small mb-4">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <a href="{{ url_for('auth.login') }}">登录</a> 后即可发布留言
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Comment List -->
+                    <div class="comment-list">
+                        {% if comments %}
+                        {% for comment in comments %}
+                        <div class="d-flex gap-3 py-2 border-bottom border-light">
+                            {% if comment.user.avatar %}
+                            <img src="{{ url_for('static', filename=comment.user.avatar) }}" class="rounded-circle comment-avatar" style="object-fit:cover">
+                            {% else %}
+                            <span class="avatar-placeholder comment-avatar" style="font-size:0.85rem">{{ comment.user.username[0] }}</span>
+                            {% endif %}
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold text-dark">{{ comment.user.username }}</span>
+                                    <span class="text-muted small">{{ comment.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                                </div>
+                                <div class="text-secondary mt-1">{{ comment.comment_content }}</div>
                             </div>
                         </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-chat-quote text-muted" style="font-size:2rem"></i>
+                            <p class="mt-2">暂无留言，来说点什么吧！</p>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
 
-                <!-- Actions -->
-                <div class="mt-auto d-flex gap-2 flex-wrap detail-action-group">
-                    {% if current_user.is_authenticated and not current_user.is_admin() %}
-                        {% if product.seller_id != current_user.user_id and product.product_status == 'ON_SALE' %}
-                        <a href="{{ url_for('order.submit', product_id=product.product_id) }}" class="btn btn-danger btn-lg flex-grow-1">
-                            <i class="bi bi-lightning-charge me-1"></i>立即购买
-                        </a>
-                        <a href="{{ url_for('social.send_message', product_id=product.product_id) }}" class="btn btn-outline-primary btn-lg px-3">
-                            <i class="bi bi-chat-dots"></i>
-                        </a>
-                        {% endif %}
-                        {% if product.product_status == 'ON_SALE' %}
-                        <button class="btn btn-outline-danger px-3 btn-fav {{ 'active' if is_favorited }}" data-product-id="{{ product.product_id }}">
-                            <i class="bi {{ 'bi-heart-fill' if is_favorited else 'bi-heart' }}"></i>
-                        </button>
-                        {% endif %}
-                        {% if product.seller_id != current_user.user_id %}
-                        <a href="{{ url_for('social.report', type='PRODUCT', id=product.product_id) }}" class="btn btn-link text-muted small">
-                            <i class="bi bi-flag"></i> 举报
-                        </a>
-                        {% endif %}
-                    {% elif not current_user.is_authenticated %}
-                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg w-100">登录后购买</a>
-                    {% endif %}
-                </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+/* Detail Page Apple Style */
+.seller-info-detail {
+    background: rgba(255, 255, 255, 0.4);
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.seller-avatar-detail {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, #EDE7FF, #F5F5FF);
+    border: 1px solid rgba(88, 86, 214, 0.12);
+}
+
+.comment-section {
+    background: rgba(255, 255, 255, 0.4);
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.comment-avatar {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #EDE7FF, #F5F5FF);
+    border: 1px solid rgba(88, 86, 214, 0.12);
+    flex-shrink: 0;
+}
+
+.comment-list .border-light {
+    border-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+.comment-list .text-secondary {
+    color: var(--text-secondary);
+}
+
+/* Unified Button Styles */
+.btn-detail {
+    padding: 12px 20px;
+    border-radius: 999px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition);
+}
+
+.btn-primary.btn-detail {
+    background: linear-gradient(135deg, var(--primary), #7B78F2);
+    border: none;
+    color: #fff;
+    box-shadow: 0 3px 10px rgba(88, 86, 214, 0.20);
+}
+
+.btn-primary.btn-detail:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 5px 16px rgba(88, 86, 214, 0.28);
+}
+
+.btn-outline-primary.btn-detail {
+    border: 1.5px solid var(--primary);
+    color: var(--primary);
+    background: rgba(88, 86, 214, 0.05);
+}
+
+.btn-outline-primary.btn-detail:hover {
+    background: rgba(88, 86, 214, 0.08);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.btn-outline-danger.btn-detail {
+    border: 1.5px solid var(--accent-red, #dc3545);
+    color: var(--accent-red, #dc3545);
+    background: rgba(220, 53, 69, 0.05);
+}
+
+.btn-outline-danger.btn-detail:hover {
+    background: rgba(220, 53, 69, 0.08);
+    border-color: var(--accent-red, #dc3545);
+    color: var(--accent-red, #dc3545);
+}
+
+.btn-outline-secondary.btn-detail {
+    border: 1.5px solid var(--text-muted, #6c757d);
+    color: var(--text-muted, #6c757d);
+    background: rgba(108, 117, 125, 0.05);
+}
+
+.btn-outline-secondary.btn-detail:hover {
+    background: rgba(108, 117, 125, 0.08);
+    border-color: var(--text-muted, #6c757d);
+    color: var(--text-muted, #6c757d);
+}
+
+.btn-fav.active {
+    background: rgba(220, 53, 69, 0.15) !important;
+    color: var(--accent-red, #dc3545) !important;
+}
+</style>
 {% endblock %}
 {% block extra_js %}
 <script>

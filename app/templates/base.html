@@ -13,7 +13,7 @@
 </head>
 <body>
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
+    <nav class="navbar navbar-expand-lg navbar-light">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('browse.home') }}">
                 <span class="brand-icon">🎓</span>
@@ -25,9 +25,11 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 {% if not current_user.is_authenticated or not current_user.is_admin() %}
                 <form class="d-flex mx-auto my-2 my-lg-0" action="{{ url_for('browse.search') }}" method="get" style="max-width:420px;width:100%">
-                    <div class="input-group">
-                        <input class="form-control" type="search" name="q" placeholder="搜索你想要的校园好物…" value="{{ query or '' }}">
-                        <button class="btn btn-light" type="submit"><i class="bi bi-search"></i></button>
+                    <div class="navbar-search-box d-flex align-items-center">
+                        <input class="navbar-search-input form-control" type="search" name="q" placeholder="搜索你想要的校园好物…" value="{{ query or '' }}">
+                        <button class="navbar-search-btn" type="submit">
+                            <i class="bi bi-search"></i>
+                        </button>
                     </div>
                 </form>
                 {% endif %}
@@ -81,6 +83,7 @@
                                 <span class="d-none d-md-inline">{{ current_user.username }}</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                <li><a class="dropdown-item py-2" href="{{ url_for('user.view_profile', user_id=current_user.user_id) }}"><i class="bi bi-person-badge me-2"></i>个人主页</a></li>
                                 <li><a class="dropdown-item py-2" href="{{ url_for('user.profile') }}"><i class="bi bi-person me-2"></i>个人资料</a></li>
                                 <li><a class="dropdown-item py-2" href="{{ url_for('product.my_products') }}"><i class="bi bi-box-seam me-2"></i>我的商品</a></li>
                                 <li><a class="dropdown-item py-2" href="{{ url_for('social.my_reports') }}"><i class="bi bi-flag me-2"></i>我的举报</a></li>
@@ -118,6 +121,9 @@
         </div>
     </div>
     {% endif %}
+
+    <!-- Spacer for fixed header -->
+    <div style="height: 140px;"></div>
 
     <!-- Flash Messages -->
     <div class="container mt-3">

@@ -12,10 +12,6 @@
             <p class="text-secondary mt-3 mb-4" style="font-size:1.05rem;max-width:440px">
                 专为大学生打造的闲置交易平台，买卖放心，淘你所爱。
             </p>
-            <form class="hero-search" action="{{ url_for('browse.search') }}" method="get">
-                <input type="text" name="q" class="form-control" placeholder="搜一搜：教材、手机、耳机、自行车…">
-                <button type="submit"><i class="bi bi-search me-1"></i>搜索</button>
-            </form>
             <div class="hero-stats">
                 <div class="hero-stat">
                     <div class="num">{{ get_categories()|length }}</div>
@@ -39,17 +35,7 @@
 {% endif %}
 
 <div class="row g-4 home-layout">
-    <div class="col-lg-9">
-        <!-- Search Box -->
-        <section class="mb-4">
-            <form class="d-flex gap-2" action="{{ url_for('browse.search') }}" method="get">
-                <input type="text" name="q" class="form-control form-control-lg" placeholder="搜索你想要的校园好物…" value="{{ query or '' }}">
-                <button type="submit" class="btn btn-primary btn-lg px-4">
-                    <i class="bi bi-search me-1"></i>搜索
-                </button>
-            </form>
-        </section>
-        
+    <div class="col-lg-12">
         {% if newest_products %}
         <!-- Newest Products -->
         <section class="mb-5">
@@ -90,27 +76,6 @@
             </a>
         </div>
         {% endif %}
-    </div>
-
-    <div class="col-lg-3">
-        <aside class="home-sidebar">
-            <div class="card shadow-sm home-category-card">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <h5 class="mb-0">商品分类</h5>
-                        <span class="badge text-bg-light">{{ get_categories()|length }}</span>
-                    </div>
-                    <div class="home-category-list">
-                        {% for c in get_categories() %}
-                        <a href="{{ url_for('browse.category', id=c.category_id) }}" class="home-category-link">
-                            <span>{{ c.category_name }}</span>
-                            <i class="bi bi-chevron-right"></i>
-                        </a>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </aside>
     </div>
 </div>
 {% endblock %}

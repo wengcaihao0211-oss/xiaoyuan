@@ -6,6 +6,7 @@ from app.extensions import db
 from app.blueprints.browse import browse_bp
 from app.models.product import Product
 from app.models.favorite import Favorite
+from app.models.product_comment import ProductComment
 from app.services import browse_service, favorite_service
 
 
@@ -13,7 +14,8 @@ from app.services import browse_service, favorite_service
 def home():
     try:
         candidates = Product.on_sale().options(
-            selectinload(Product.images)
+            selectinload(Product.images),
+            selectinload(Product.seller)
         ).order_by(Product.created_at.desc()).limit(100).all()
     except Exception:
         db.session.rollback()
@@ -76,7 +78,7 @@ def search():
                          sort=payload['sort'])
 
 
-@browse_bp.route('/product/<int:id>')
+@browse_bp.route('/product/<int:id>', methods=['GET', 'POST'])
 def detail(id):
     product = db.session.get(Product, id)
     if not product or product.deleted:
@@ -92,6 +94,20 @@ def detail(id):
             flash('商品不存在或已下架。', 'warning')
             return redirect(url_for('browse.home'))
 
+    # 提交留言
+    if request.method == 'POST' and current_user.is_authenticated:
+        content = request.form.get('comment_content', '').strip()
+        if content:
+            comment = ProductComment(
+                product_id=product.product_id,
+                user_id=current_user.user_id,
+                comment_content=content
+            )
+            db.session.add(comment)
+            db.session.commit()
+            flash('留言成功！', 'success')
+            return redirect(url_for('browse.detail', id=id))
+
     product.view_count = (product.view_count or 0) + 1
     db.session.commit()
 
@@ -105,11 +121,19 @@ def detail(id):
         favorite_count = favorite_service.get_favorite_count(
             current_user.user_id
         )
+    
+    # 获取留言列表
+    comments = ProductComment.active().filter_by(
+        product_id=product.product_id
+    ).options(
+        selectinload(ProductComment.user)
+    ).order_by(ProductComment.created_at.desc()).all()
 
     return render_template('browse/detail.html',
                          product=product, seller=seller,
                          is_favorited=is_favorited,
-                         favorite_count=favorite_count)
+                         favorite_count=favorite_count,
+                         comments=comments)
 
 
 @browse_bp.route('/favorite/toggle/<int:product_id>', methods=['POST'])

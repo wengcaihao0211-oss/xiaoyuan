@@ -8,8 +8,9 @@ from app.models.message import Message
 from app.models.review import Review
 from app.models.report import Report
 from app.models.notification import Notification
+from app.models.product_comment import ProductComment
 
 __all__ = [
     'User', 'Category', 'Product', 'ProductImage',
-    'Favorite', 'Order', 'Message', 'Review', 'Report', 'Notification'
+    'Favorite', 'Order', 'Message', 'Review', 'Report', 'Notification', 'ProductComment'
 ]

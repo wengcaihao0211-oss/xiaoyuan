@@ -2,6 +2,10 @@ from flask import render_template, redirect, url_for, flash, request
 from flask_login import login_required, current_user
 from app.blueprints.user import user_bp
 from app.services import user_service
+from app.extensions import db
+from app.models.user import User
+from app.models.product import Product
+from app.utils.pagination import paginate
 
 
 @user_bp.route('/profile')
@@ -9,6 +13,22 @@ from app.services import user_service
 def profile():
     stats = user_service.get_user_stats(current_user)
     return render_template('user/profile.html', user=current_user, stats=stats)
+
+
+@user_bp.route('/view/<int:user_id>')
+def view_profile(user_id):
+    user = db.session.get(User, user_id)
+    if not user:
+        flash('用户不存在', 'danger')
+        return redirect(url_for('browse.home'))
+    
+    products = Product.on_sale().filter_by(seller_id=user_id).order_by(Product.created_at.desc())
+    pagination = paginate(products)
+    
+    # 获取用户统计数据
+    stats = user_service.get_user_stats(user)
+    
+    return render_template('user/view_profile.html', user=user, products=pagination.items, pagination=pagination, stats=stats)
 
 
 @user_bp.route('/profile/edit', methods=['GET', 'POST'])

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}{{ user.nickname or user.username }}的个人主页{% endblock %}
+{% block content %}
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm text-center glass">
+            <div class="card-body">
+                {% if user.avatar %}
+                <img src="{{ url_for('static', filename=user.avatar) }}" class="rounded-circle mb-3 seller-avatar-detail" style="object-fit:cover">
+                {% else %}
+                <span class="avatar-placeholder seller-avatar-detail">{{ user.username[0] }}</span>
+                {% endif %}
+                <h4 class="mb-2">{{ user.nickname or user.username }}</h4>
+                <p class="text-muted mb-3">{{ user.introduction or '暂无简介' }}</p>
+                
+                <!-- 交易数据统计 -->
+                <div class="row text-center g-2 mt-3">
+                    <div class="col-4">
+                        <div class="p-2 rounded-3 bg-white bg-opacity-50">
+                            <div class="fw-bold text-primary" style="font-size: 1.25rem;">{{ stats.product_count if stats else 0 }}</div>
+                            <div class="text-muted small">发布商品</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-2 rounded-3 bg-white bg-opacity-50">
+                            <div class="fw-bold text-success" style="font-size: 1.25rem;">{{ stats.sold_count if stats else 0 }}</div>
+                            <div class="text-muted small">已成交</div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="p-2 rounded-3 bg-white bg-opacity-50">
+                            <div class="fw-bold text-warning" style="font-size: 1.25rem;">{{ stats.avg_rating or '-' if stats else '-' }}</div>
+                            <div class="text-muted small">平均评分</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card shadow-sm glass">
+            <div class="card-header">
+                <h5 class="mb-0">发布的商品</h5>
+            </div>
+            <div class="card-body">
+                {% if products %}
+                <div class="product-grid">
+                    {% for product in products %}
+                    <div class="product-card">
+                        <div class="card-img-wrapper">
+                            {% if product.image_list %}
+                            <img src="{{ url_for('static', filename=product.image_list[0]) }}" class="w-100" alt="{{ product.product_name }}">
+                            {% else %}
+                            <div class="img-placeholder d-flex align-items-center justify-content-center">
+                                <i class="bi bi-image text-muted" style="font-size:3rem"></i>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-1">
+                                <a href="{{ url_for('browse.detail', id=product.product_id) }}" class="text-dark">
+                                    {{ product.product_name }}
+                                </a>
+                            </h6>
+                            <div class="price mb-1">
+                                <span class="symbol">¥</span>{{ '%.2f'|format(product.price) }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-box-seam"></i>
+                    <h4>暂无商品</h4>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -18,9 +18,20 @@
             <div class="card-body">
                 <div class="card-title">{{ product.product_name }}</div>
                 <div class="price"><span class="price-symbol">¥</span>{{ '%.2f'|format(product.price) }}</div>
-                <div class="meta">
-                    <span><i class="bi bi-geo-alt"></i> {{ product.trade_location[:6] }}</span>
-                    <span class="ms-auto"><i class="bi bi-eye"></i> {{ product.view_count or 0 }}</span>
+                <div class="seller-info d-flex align-items-center justify-content-between">
+                    <span class="location-text">
+                        <i class="bi bi-geo-alt"></i> {{ product.trade_location[:6] }}
+                    </span>
+                    <div class="seller-profile d-flex align-items-center gap-2">
+                        {% if product.seller %}
+                            {% if product.seller.avatar %}
+                                <img src="{{ url_for('static', filename=product.seller.avatar) }}" alt="{{ product.seller.username }}" class="seller-avatar">
+                            {% else %}
+                                <span class="seller-avatar-placeholder">{{ product.seller.username[0] }}</span>
+                            {% endif %}
+                            <span class="seller-nickname">{{ product.seller.nickname or product.seller.username }}</span>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
         </div>
