@@ -11,14 +11,14 @@
 
 <div class="row g-4">
     <!-- Product Images -->
-    <div class="col-lg-6">
-        <div class="card detail-gallery-card border-0 overflow-hidden h-100 d-flex flex-column">
+    <div class="col-lg-5">
+        <div class="card border-0 shadow-sm overflow-hidden glass">
             {% if product.image_list %}
             <div id="productCarousel" class="carousel slide" data-bs-ride="false">
                 <div class="carousel-inner">
                     {% for img in product.image_list %}
                     <div class="carousel-item {{ 'active' if loop.first }}">
-            <div class="detail-gallery-stage d-flex align-items-center justify-content-center">
+                        <div class="detail-gallery-stage bg-light d-flex align-items-center justify-content-center">
                             <img src="{{ url_for('static', filename=img) }}" class="d-block detail-gallery-image">
                         </div>
                     </div>
@@ -35,7 +35,7 @@
             </div>
             <!-- Thumbnails -->
             {% if product.image_list|length > 1 %}
-            <div class="detail-thumbnail-strip d-flex gap-2 p-3">
+            <div class="detail-thumbnail-strip d-flex gap-2 p-3 bg-white border-top">
                 {% for img in product.image_list %}
                 <img src="{{ url_for('static', filename=img) }}" class="rounded border {{ 'border-primary border-2' if loop.first }}"
                      style="width:56px;height:56px;object-fit:cover;cursor:pointer"
@@ -44,7 +44,7 @@
             </div>
             {% endif %}
             {% else %}
-            <div class="detail-gallery-stage d-flex align-items-center justify-content-center">
+            <div class="detail-gallery-stage bg-light d-flex align-items-center justify-content-center">
                 <i class="bi bi-image text-muted" style="font-size:5rem"></i>
             </div>
             {% endif %}
@@ -52,79 +52,385 @@
     </div>
 
     <!-- Product Info -->
-    <div class="col-lg-6">
-        <div class="card detail-info-card border-0 h-100">
+    <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100 glass">
             <div class="card-body p-4 d-flex flex-column">
-                <div>
-                    <div class="d-flex gap-2 mb-2">
-                        <span class="badge bg-{{ 'success' if product.condition_level == '全新' else 'warning' if '九' in product.condition_level else 'secondary' }}">
-                            {{ product.condition_level }}
-                        </span>
-                        <span class="badge bg-info">{{ product.category.category_name }}</span>
-                    </div>
-                    <h3 class="fw-bold mb-2">{{ product.product_name }}</h3>
-                    <div class="price-display mb-3">
-                        <span class="symbol">¥</span>{{ '%.2f'|format(product.price) }}
-                    </div>
-                    <div class="d-flex gap-4 text-muted small mb-4 detail-meta-row">
-                        <span><i class="bi bi-eye me-1"></i>{{ product.view_count }} 次浏览</span>
-                        <span><i class="bi bi-geo-alt me-1"></i>{{ product.trade_location }}</span>
-                        <span>{{ product.created_at.strftime('%Y-%m-%d') }}</span>
-                    </div>
+                <!-- 1. Seller Info with Clickable Links -->
+                <div class="d-flex align-items-center mb-4 seller-info-detail">
+                    <a href="{{ url_for('user.view_profile', user_id=seller.user_id) }}" class="text-decoration-none d-flex align-items-center">
+                        {% if seller.avatar %}
+                        <img src="{{ url_for('static', filename=seller.avatar) }}" class="rounded-circle seller-avatar-detail" style="object-fit:cover">
+                        {% else %}
+                        <span class="avatar-placeholder seller-avatar-detail" style="font-size:1.3rem">{{ seller.username[0] }}</span>
+                        {% endif %}
+                        <div class="ms-3">
+                            <span class="fw-bold text-dark">{{ seller.username }}</span>
+                        </div>
+                    </a>
+                </div>
 
+                <!-- 2. Product Title -->
+                <h3 class="fw-bold mb-3 text-dark">{{ product.product_name }}</h3>
+                
+                <!-- Price Display -->
+                <div class="price-display mb-4">
+                    <span class="symbol">¥</span>{{ '%.2f'|format(product.price) }}
+                </div>
+                
+                <!-- 3. Condition + Category Tags -->
+                <div class="d-flex gap-2 mb-3">
+                    <span class="badge bg-{{ 'success' if product.condition_level == '全新' else 'warning' if '九' in product.condition_level else 'secondary' }}">
+                        {{ product.condition_level }}
+                    </span>
+                    <span class="badge bg-info">{{ product.category.category_name }}</span>
+                </div>
+                
+                <!-- Trade Info -->
+                <div class="d-flex gap-4 text-muted small mb-4 detail-meta-row">
+                    <span><i class="bi bi-geo-alt me-1"></i>{{ product.trade_location }}</span>
+                    <span>{{ product.created_at.strftime('%Y-%m-%d') }}</span>
+                </div>
+
+                <!-- 4. Product Description -->
+                <div class="mb-4">
                     <h6 class="fw-bold text-uppercase small text-muted mb-2">商品描述</h6>
                     <p class="text-secondary lh-lg">{{ product.description }}</p>
                 </div>
 
-                <!-- Seller -->
-                <div class="seller-card mt-3 mb-3">
-                    <div class="d-flex align-items-center gap-3">
-                        {% if seller.avatar %}
-                        <img src="{{ url_for('static', filename=seller.avatar) }}" class="rounded-circle" width="48" height="48" style="object-fit:cover">
-                        {% else %}
-                        <span class="avatar-placeholder" style="width:48px;height:48px;font-size:1.1rem">{{ seller.username[0] }}</span>
-                        {% endif %}
-                        <div>
-                            <strong>{{ seller.username }}</strong>
-                            <div class="small text-muted">
-                                {{ seller.sold_count }} 笔成交
-                                {% if seller.avg_rating %}
-                                · <i class="bi bi-star-fill text-warning"></i> {{ seller.avg_rating }}
-                                {% endif %}
+                <!-- Action Buttons - Moved above comments -->
+                <div class="mb-4 detail-action-group">
+                    {% if current_user.is_authenticated %}
+                        <div class="d-flex gap-2 flex-wrap">
+                            {% if not current_user.is_admin() %}
+                            {% if product.seller_id != current_user.user_id and product.product_status == 'ON_SALE' %}
+                            <a href="{{ url_for('order.submit', product_id=product.product_id) }}" class="btn btn-primary btn-detail">
+                                <i class="bi bi-lightning-charge me-1"></i>购买
+                            </a>
+                            <a href="{{ url_for('social.chat_detail', user_id=product.seller_id, product_id=product.product_id) }}" class="btn btn-outline-primary btn-detail">
+                                <i class="bi bi-chat-dots me-1"></i>私聊
+                            </a>
+                            {% endif %}
+                            {% if product.product_status == 'ON_SALE' and product.seller_id != current_user.user_id %}
+                            <button class="btn btn-outline-danger btn-detail btn-fav {{ 'active' if is_favorited }}" data-product-id="{{ product.product_id }}">
+                                <i class="bi {{ 'bi-heart-fill' if is_favorited else 'bi-heart' }} me-1"></i>收藏
+                            </button>
+                            {% endif %}
+                            {% if product.seller_id != current_user.user_id %}
+                            <a href="{{ url_for('social.report', type='PRODUCT', id=product.product_id) }}" class="btn btn-outline-secondary btn-detail">
+                                <i class="bi bi-flag me-1"></i>举报
+                            </a>
+                            {% endif %}
+                            {% if product.seller_id == current_user.user_id %}
+                            <a href="{{ url_for('product.edit', id=product.product_id) }}" class="btn btn-seller">
+                                <i class="bi bi-pencil me-1"></i>编辑
+                            </a>
+                            {% if product.product_status == 'ON_SALE' %}
+                            <form method="post" action="{{ url_for('product.toggle', id=product.product_id) }}" style="display:inline" onsubmit="return confirm('确定下架该商品？')">
+                                <button class="btn btn-seller btn-takedown">
+                                    <i class="bi bi-box-arrow-down me-1"></i>下架
+                                </button>
+                            </form>
+                            {% endif %}
+                            {% endif %}
+                            {% endif %}
+                            {% if current_user.is_admin() and product.product_status == 'ON_SALE' %}
+                            <form method="post" action="{{ url_for('admin.takedown_product', id=product.product_id) }}" style="display:inline" onsubmit="return confirm('确定下架该商品？')">
+                                <button class="btn btn-outline-warning btn-detail" name="permanent" value="0">
+                                    <i class="bi bi-shield-exclamation me-1"></i>下架
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    {% elif not current_user.is_authenticated %}
+                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-detail w-100">登录后购买</a>
+                    {% endif %}
+                </div>
+
+                <!-- Comment Section -->
+                <div class="comment-section">
+                    <h6 class="fw-bold text-uppercase small text-muted mb-3">
+                        <i class="bi bi-chat-square-text me-1"></i>商品留言
+                    </h6>
+                    
+                    <!-- Comment Input - Same as navbar search -->
+                    {% if current_user.is_authenticated %}
+                    <form method="post" class="mb-4">
+                        <div class="navbar-search-box d-flex align-items-center">
+                            <input type="text" name="comment_content" class="navbar-search-input form-control" 
+                                   placeholder="说点什么吧..." required>
+                            <button type="submit" class="navbar-search-btn">
+                                <i class="bi bi-send"></i>
+                            </button>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-info small mb-4">
+                        <i class="bi bi-info-circle me-1"></i>
+                        <a href="{{ url_for('auth.login') }}">登录</a> 后即可发布留言
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Comment List -->
+                    <div class="comment-list">
+                        {% if comments %}
+                        {% for comment in comments %}
+                        <div class="d-flex gap-3 py-2 border-bottom border-light">
+                            {% if comment.user.avatar %}
+                            <img src="{{ url_for('static', filename=comment.user.avatar) }}" class="rounded-circle comment-avatar" style="object-fit:cover">
+                            {% else %}
+                            <span class="avatar-placeholder comment-avatar" style="font-size:0.85rem">{{ comment.user.username[0] }}</span>
+                            {% endif %}
+                            <div class="flex-grow-1">
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="fw-bold text-dark">{{ comment.user.username }}</span>
+                                    <span class="text-muted small">{{ comment.created_at|beijing_hm }}</span>
+                                </div>
+                                <div class="text-secondary mt-1">{{ comment.comment_content }}</div>
                             </div>
                         </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-chat-quote text-muted" style="font-size:2rem"></i>
+                            <p class="mt-2">暂无留言，来说点什么吧！</p>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
 
-                <!-- Actions -->
-                <div class="mt-auto d-flex gap-2 flex-wrap detail-action-group">
-                    {% if current_user.is_authenticated and not current_user.is_admin() %}
-                        {% if product.seller_id != current_user.user_id and product.product_status == 'ON_SALE' %}
-                        <a href="{{ url_for('order.submit', product_id=product.product_id) }}" class="btn btn-danger btn-lg flex-grow-1">
-                            <i class="bi bi-lightning-charge me-1"></i>立即购买
-                        </a>
-                        <a href="{{ url_for('social.send_message', product_id=product.product_id) }}" class="btn btn-outline-primary btn-lg px-3">
-                            <i class="bi bi-chat-dots"></i>
-                        </a>
-                        {% endif %}
-                        {% if product.product_status == 'ON_SALE' %}
-                        <button class="btn btn-outline-danger px-3 btn-fav {{ 'active' if is_favorited }}" data-product-id="{{ product.product_id }}">
-                            <i class="bi {{ 'bi-heart-fill' if is_favorited else 'bi-heart' }}"></i>
-                        </button>
-                        {% endif %}
-                        {% if product.seller_id != current_user.user_id %}
-                        <a href="{{ url_for('social.report', type='PRODUCT', id=product.product_id) }}" class="btn btn-link">
-                            <i class="bi bi-flag"></i>
-                        </a>
-                        {% endif %}
-                    {% elif not current_user.is_authenticated %}
-                        <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg w-100">登录后购买</a>
-                    {% endif %}
-                </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+/* Detail Page Apple Style */
+.seller-info-detail {
+    background: rgba(255, 255, 255, 0.4);
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.seller-avatar-detail {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, #EDE7FF, #F5F5FF);
+    border: 1px solid rgba(88, 86, 214, 0.12);
+}
+
+.comment-section {
+    background: rgba(255, 255, 255, 0.4);
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.comment-avatar {
+    width: 36px;
+    height: 36px;
+    background: linear-gradient(135deg, #EDE7FF, #F5F5FF);
+    border: 1px solid rgba(88, 86, 214, 0.12);
+    flex-shrink: 0;
+}
+
+.comment-list .border-light {
+    border-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+.comment-list .text-secondary {
+    color: var(--text-secondary);
+}
+
+.price-display {
+    color: #ff3b30;
+    font-size: calc(1.3rem + 0.6vw);
+    font-weight: 900;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+}
+
+.price-display .symbol {
+    font-size: inherit;
+    font-weight: inherit;
+}
+
+/* Unified Button Styles - iOS Style */
+.btn-detail {
+  padding: 0 24px;
+  border-radius: 28px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition);
+  height: 52px;
+  width: 120px;
+  border: none;
+  letter-spacing: 0.2px;
+  gap: 6px;
+}
+
+.btn-detail i {
+  font-size: 1.1rem;
+}
+
+/* 购买按钮 - 深紫罗兰紫色底色 */
+.btn-primary.btn-detail {
+  background: linear-gradient(135deg, #5856D6, #7B78F2);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(88, 86, 214, 0.3), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.btn-primary.btn-detail:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(88, 86, 214, 0.38), 0 2px 6px rgba(0, 0, 0, 0.12);
+  filter: brightness(1.06);
+}
+
+.btn-primary.btn-detail:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(88, 86, 214, 0.25), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* 私聊按钮 - 清新柔和苹果系薄荷绿色底色 */
+.btn-outline-primary.btn-detail {
+  background: linear-gradient(135deg, #34C759, #5FD068);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(52, 199, 89, 0.3), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.btn-outline-primary.btn-detail:hover {
+  background: linear-gradient(135deg, #30B850, #55C960);
+  color: #fff;
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(52, 199, 89, 0.38), 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.btn-outline-primary.btn-detail:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(52, 199, 89, 0.25), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* 收藏按钮 - 柔和暖红色底色（未收藏状态） */
+.btn-outline-danger.btn-detail {
+  background: linear-gradient(135deg, #FF8A80, #FF9E9E);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(255, 138, 128, 0.3), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.btn-outline-danger.btn-detail:hover {
+  background: linear-gradient(135deg, #FF776D, #FF9191);
+  color: #fff;
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 138, 128, 0.38), 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.btn-outline-danger.btn-detail:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(255, 138, 128, 0.25), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* 收藏按钮 - 激活状态（已收藏）- 高饱和正红色 */
+.btn-fav.active {
+  background: linear-gradient(135deg, #FF3B30, #FF453A) !important;
+  color: #fff !important;
+  box-shadow: 0 4px 16px rgba(255, 59, 48, 0.4), 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+.btn-fav.active:hover {
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 59, 48, 0.48), 0 2px 6px rgba(0, 0, 0, 0.12) !important;
+}
+
+.btn-fav.active:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(255, 59, 48, 0.3), 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+}
+
+/* 举报按钮 - 浅灰中性底色 */
+.btn-outline-secondary.btn-detail {
+  background: linear-gradient(135deg, #8E8E93, #A1A1A6);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(142, 142, 147, 0.25), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.btn-outline-secondary.btn-detail:hover {
+  background: linear-gradient(135deg, #7D7D82, #949499);
+  color: #fff;
+  filter: brightness(1.06);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(142, 142, 147, 0.32), 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+
+.btn-outline-secondary.btn-detail:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(142, 142, 147, 0.2), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+@media (max-width: 768px) {
+  .detail-gallery-stage {
+    min-height: 260px;
+  }
+
+  .detail-gallery-image {
+    max-height: 300px;
+  }
+
+  .detail-thumbnail-strip {
+    overflow-x: auto;
+    padding-bottom: 12px !important;
+  }
+
+  .seller-info-detail,
+  .comment-section {
+    padding: 14px;
+  }
+
+  .detail-meta-row {
+    flex-wrap: wrap;
+    gap: 10px 18px !important;
+  }
+
+  .detail-action-group > .d-flex {
+    gap: 10px !important;
+  }
+
+  .btn-detail {
+    width: calc(50% - 5px);
+    min-width: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .price-display {
+    font-size: 1.35rem;
+  }
+
+  .seller-avatar-detail {
+    width: 46px;
+    height: 46px;
+  }
+
+  .btn-detail,
+  .detail-action-group > a.btn-detail {
+    width: 100%;
+  }
+
+  .comment-list .d-flex {
+    gap: 10px !important;
+  }
+
+  .comment-list .d-flex.align-items-center.gap-2 {
+    flex-wrap: wrap;
+    gap: 4px 8px !important;
+  }
+}
+</style>
 {% endblock %}
 {% block extra_js %}
 <script>
@@ -139,6 +445,22 @@ document.querySelector('.btn-fav')?.addEventListener('click', async function(){
         const icon = this.querySelector('i');
         icon.className = 'bi ' + (data.is_favorited ? 'bi-heart-fill' : 'bi-heart');
         this.classList.toggle('active', data.is_favorited);
+        // update nav fav dot
+        let dot = document.getElementById('favDot');
+        if (data.favorite_count > 0) {
+            if (!dot) {
+                const favLink = document.getElementById('favLink');
+                if (favLink) {
+                    dot = document.createElement('span');
+                    dot.id = 'favDot';
+                    dot.className = 'fav-dot';
+                    favLink.appendChild(dot);
+                }
+            }
+            if (dot) { dot.style.display = ''; sessionStorage.removeItem('favViewed'); }
+        } else {
+            if (dot) dot.style.display = 'none';
+        }
     }
 });
 </script>

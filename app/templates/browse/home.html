@@ -1,59 +1,49 @@
 {% extends "base.html" %}
 {% from "partials/_product_card.html" import product_card %}
 {% block title %}校园二手交易 - 买卖闲置，物尽其用{% endblock %}
-
-{% block category_bar %}
-{% if not current_user.is_authenticated or not current_user.is_admin() %}
-<div class="category-bar">
-    <div class="container">
-        <div class="d-flex overflow-auto py-2 gap-2 align-items-center">
-            <a href="{{ url_for('browse.home') }}" class="category-chip active">全部</a>
-            {% for c in get_categories() %}
-            <a href="{{ url_for('browse.category', id=c.category_id) }}" class="category-chip">{{ c.category_name }}</a>
-            {% endfor %}
-        </div>
-    </div>
-</div>
-{% endif %}
-{% endblock %}
-
 {% block content %}
 
 <!-- Hero -->
 {% if not current_user.is_authenticated or not current_user.is_admin() %}
-<section class="hero compact-hero">
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
-        <div>
-            <h1>校园二手<span class="highlight">好物</span>，发现你的<span class="highlight">心头好</span></h1>
-            <p class="text-secondary mb-0" style="font-size:0.95rem">专为大学生打造的闲置交易平台，买卖放心，淘你所爱。</p>
+<section class="hero">
+    <div class="row align-items-center">
+        <div class="col-lg-7">
+            <h1>校园二手<span class="highlight">好物</span>，<br>发现你的<span class="highlight">心头好</span></h1>
+            <p class="text-secondary mt-3 mb-4" style="font-size:1.05rem;max-width:440px">
+                专为大学生打造的闲置交易平台，买卖放心，淘你所爱。
+            </p>
+            <div class="hero-stats">
+                <div class="hero-stat">
+                    <div class="num">{{ get_categories()|length }}</div>
+                    <div class="label">商品分类</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="num">7×24</div>
+                    <div class="label">随时发布</div>
+                </div>
+                <div class="hero-stat">
+                    <div class="num">免费</div>
+                    <div class="label">完全免费</div>
+                </div>
+            </div>
         </div>
-        <div class="hero-stats">
-            <div class="hero-stat">
-                <div class="num">{{ get_categories()|length }}</div>
-                <div class="label">分类</div>
-            </div>
-            <div class="hero-stat">
-                <div class="num">7×24</div>
-                <div class="label">随时发布</div>
-            </div>
-            <div class="hero-stat">
-                <div class="num">免费</div>
-                <div class="label">完全免费</div>
-            </div>
+        <div class="col-lg-5 d-none d-lg-flex justify-content-center">
+            <div style="font-size:10rem;opacity:0.15;line-height:1">🎓</div>
         </div>
     </div>
 </section>
 {% endif %}
 
 <div class="row g-4 home-layout">
-    <div class="col-lg-9">
+    <div class="col-lg-12">
         {% if newest_products %}
+        <!-- Newest Products -->
         <section class="mb-5">
             <div class="section-header">
                 <h3><span class="icon-circle" style="background: linear-gradient(135deg, #EEF2FF, #E0E7FF);color:#4F46E5"><i class="bi bi-lightning-charge"></i></span> 最新发布</h3>
                 <a href="{{ url_for('browse.search') }}" class="text-decoration-none small fw-medium">查看全部 <i class="bi bi-arrow-right"></i></a>
             </div>
-            <div class="product-grid product-grid-3">
+            <div class="product-grid">
                 {% for p in newest_products %}
                 {{ product_card(p) }}
                 {% endfor %}
@@ -68,7 +58,7 @@
                 <h3><span class="icon-circle" style="background: linear-gradient(135deg, #FEE2E2, #FECACA);color:#EF4444"><i class="bi bi-fire"></i></span> 热门推荐</h3>
                 <span class="text-muted small">近7日浏览量最高</span>
             </div>
-            <div class="product-grid product-grid-3">
+            <div class="product-grid">
                 {% for p in hot_products %}
                 {{ product_card(p) }}
                 {% endfor %}
@@ -86,27 +76,6 @@
             </a>
         </div>
         {% endif %}
-    </div>
-
-    <div class="col-lg-3">
-        <aside class="home-sidebar">
-            <div class="card shadow-sm home-category-card">
-                <div class="card-body">
-                    <div class="d-flex align-items-center justify-content-between mb-3">
-                        <h5 class="mb-0">商品分类</h5>
-                        <span class="badge text-bg-light">{{ get_categories()|length }}</span>
-                    </div>
-                    <div class="home-category-list">
-                        {% for c in get_categories() %}
-                        <a href="{{ url_for('browse.category', id=c.category_id) }}" class="home-category-link">
-                            <span>{{ c.category_name }}</span>
-                            <i class="bi bi-chevron-right"></i>
-                        </a>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </aside>
     </div>
 </div>
 {% endblock %}

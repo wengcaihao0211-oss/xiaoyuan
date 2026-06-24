@@ -11,11 +11,10 @@
     <link href="{{ url_for('static', filename='css/app.css') }}" rel="stylesheet">
     {% block extra_css %}{% endblock %}
 </head>
-<body>
-    <!-- Navbar Wrapper -->
-    <div class="navbar-wrapper sticky-top">
+<body class="{% block body_class %}{% endblock %}">
+    {% set show_category_bar = (not current_user.is_authenticated or not current_user.is_admin()) and request.endpoint in ['browse.home', 'browse.category'] %}
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-light">
+    <nav class="navbar navbar-expand-lg navbar-light {% if show_category_bar %}navbar-with-category-bar{% endif %}">
         <div class="container">
             <a class="navbar-brand d-flex align-items-center gap-2" href="{{ url_for('browse.home') }}">
                 <span class="brand-icon">🎓</span>
@@ -25,53 +24,53 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <form class="d-flex mx-auto my-1 my-lg-0" action="{{ url_for('browse.search') }}" method="get" style="max-width:320px;width:100%">
-                    <div class="input-group">
-                        <input class="form-control form-control-sm" type="search" name="q" placeholder="搜索校园好物…" value="{{ query or '' }}">
-                        <button class="btn btn-light btn-sm" type="submit"><i class="bi bi-search"></i></button>
+                {% if not current_user.is_authenticated or not current_user.is_admin() %}
+                <form class="d-flex mx-auto my-2 my-lg-0" action="{{ url_for('browse.search') }}" method="get" style="max-width:420px;width:100%">
+                    <div class="navbar-search-box d-flex align-items-center">
+                        <input class="navbar-search-input form-control" type="search" name="q" placeholder="搜索你想要的校园好物…" value="{{ query or '' }}">
+                        <button class="navbar-search-btn" type="submit">
+                            <i class="bi bi-search"></i>
+                        </button>
                     </div>
                 </form>
-                <ul class="navbar-nav ms-auto align-items-center gap-0 navbar-nav-compact">
+                {% endif %}
+                <ul class="navbar-nav ms-auto align-items-center gap-1">
                     {% if current_user.is_authenticated %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('browse.home') }}"><i class="bi bi-house"></i><span class="nav-text">首页</span></a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('product.publish') }}"><i class="bi bi-plus-circle"></i><span class="nav-text">发布</span></a></li>
-                        <li class="nav-item"><a class="nav-link position-relative" href="{{ url_for('browse.favorites') }}">
-                            <i class="bi bi-heart"></i><span class="nav-text">收藏</span>
-                            {% if favorite_count > 0 %}
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.6rem">
-                                {{ favorite_count }}
-                            </span>
-                            {% endif %}
-                        </a></li>
-                        <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="bi bi-receipt"></i><span class="nav-text">订单</span></a>
-                            <ul class="dropdown-menu dropdown-menu-start shadow border-0 rounded-3">
-                                <li><a class="dropdown-item py-2" href="{{ url_for('order.buyer_list') }}"><i class="bi bi-bag me-2"></i>我购买的</a></li>
-                                <li><a class="dropdown-item py-2" href="{{ url_for('order.seller_list') }}"><i class="bi bi-shop me-2"></i>我卖出的</a></li>
-                            </ul>
-                        </li>
-                        <li class="nav-item"><a class="nav-link position-relative" href="{{ url_for('social.chat_list') }}">
-                            <i class="bi bi-chat-dots"></i><span class="nav-text">消息</span>
-                            {% if unread_message_count > 0 %}
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.6rem">
-                                {{ unread_message_count }}
-                            </span>
-                            {% endif %}
-                        </a></li>
-                        <li class="nav-item"><a class="nav-link position-relative" href="{{ url_for('notification.list') }}">
-                            <i class="bi bi-bell"></i><span class="nav-text">通知</span>
-                            {% if unread_notification_count > 0 %}
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.6rem">
-                                {{ unread_notification_count }}
-                            </span>
-                            {% endif %}
-                        </a></li>
                         {% if current_user.is_admin() %}
-                        <li class="nav-item ms-2">
-                            <a class="navbar-admin-pill" href="{{ url_for('admin.dashboard') }}">
-                                <i class="bi bi-speedometer2"></i><span class="nav-text">管理后台</span>
-                            </a>
-                        </li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.dashboard') }}"><i class="bi bi-speedometer2 me-1"></i>管理后台</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('browse.home') }}"><i class="bi bi-house me-1"></i>前台首页</a></li>
+                        {% else %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('browse.home') }}"><i class="bi bi-house me-1"></i>首页</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('product.publish') }}"><i class="bi bi-plus-circle me-1"></i>发布</a></li>
+                            <li class="nav-item"><a class="nav-link position-relative" href="{{ url_for('browse.favorites') }}" id="favLink">
+                                <i class="bi bi-heart me-1"></i>收藏
+                                {% if favorite_count > 0 %}
+                                <span class="fav-dot" id="favDot"></span>
+                                {% endif %}
+                            </a></li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown"><i class="bi bi-receipt me-1"></i>订单</a>
+                                <ul class="dropdown-menu dropdown-menu-start shadow border-0 rounded-3">
+                                    <li><a class="dropdown-item py-2" href="{{ url_for('order.buyer_list') }}"><i class="bi bi-bag me-2"></i>我购买的</a></li>
+                                    <li><a class="dropdown-item py-2" href="{{ url_for('order.seller_list') }}"><i class="bi bi-shop me-2"></i>我卖出的</a></li>
+                                </ul>
+                            </li>
+                            <li class="nav-item"><a class="nav-link position-relative" href="{{ url_for('social.chat_list') }}">
+                                <i class="bi bi-chat-dots me-1"></i>消息
+                                {% if unread_message_count > 0 %}
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.65rem">
+                                    {{ unread_message_count }}
+                                </span>
+                                {% endif %}
+                            </a></li>
+                            <li class="nav-item"><a class="nav-link position-relative" href="{{ url_for('notification.list') }}">
+                                <i class="bi bi-bell me-1"></i>通知
+                                {% if unread_notification_count > 0 %}
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.65rem">
+                                    {{ unread_notification_count }}
+                                </span>
+                                {% endif %}
+                            </a></li>
                         {% endif %}
                         <li class="nav-item dropdown ms-1">
                             <a class="nav-link dropdown-toggle d-flex align-items-center gap-1" href="#" data-bs-toggle="dropdown">
@@ -83,9 +82,12 @@
                                 <span class="d-none d-md-inline">{{ current_user.username }}</span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end shadow border-0 rounded-3">
+                                <li><a class="dropdown-item py-2" href="{{ url_for('user.view_profile', user_id=current_user.user_id) }}"><i class="bi bi-person-badge me-2"></i>个人主页</a></li>
                                 <li><a class="dropdown-item py-2" href="{{ url_for('user.profile') }}"><i class="bi bi-person me-2"></i>个人资料</a></li>
                                 <li><a class="dropdown-item py-2" href="{{ url_for('product.my_products') }}"><i class="bi bi-box-seam me-2"></i>我的商品</a></li>
                                 <li><a class="dropdown-item py-2" href="{{ url_for('social.my_reports') }}"><i class="bi bi-flag me-2"></i>我的举报</a></li>
+                                <li><a class="dropdown-item py-2" href="{{ url_for('social.reports_against_me') }}"><i class="bi bi-exclamation-triangle me-2"></i>针对我的举报</a></li>
+                                <li><a class="dropdown-item py-2" href="{{ url_for('social.contact_admin') }}"><i class="bi bi-headset me-2"></i>联系管理员</a></li>
                                 <li><hr class="dropdown-divider"></li>
                                 <li><a class="dropdown-item py-2" href="{{ url_for('auth.change_password') }}"><i class="bi bi-shield-lock me-2"></i>修改密码</a></li>
                                 <li>
@@ -107,11 +109,24 @@
     </nav>
 
     <!-- Category Bar -->
-    {% block category_bar %}{% endblock %}
-    </div><!-- /navbar-wrapper -->
+    {% if show_category_bar %}
+    <div class="category-bar category-bar-attached">
+        <div class="container">
+            <div class="d-flex overflow-auto py-2 gap-2 align-items-center">
+                <a href="{{ url_for('browse.home') }}" class="category-chip {% if request.path == '/' %}active{% endif %}">全部</a>
+                {% for c in get_categories() %}
+                <a href="{{ url_for('browse.category', id=c.category_id) }}" class="category-chip {% if request.path == url_for('browse.category', id=c.category_id) %}active{% endif %}">{{ c.category_name }}</a>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Spacer for fixed header -->
+    <div class="app-header-spacer {% if show_category_bar %}with-category-bar{% endif %}"></div>
 
     <!-- Flash Messages -->
-    <div class="container mt-3">
+    <div class="container mt-3 app-flash-container">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
         {% for category, message in messages %}
