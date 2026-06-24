@@ -9,6 +9,7 @@ from app.models.category import Category
 from app.models.report import Report
 from app.models.notification import Notification
 from app.services.ai_review_service import AIReviewService
+from app.services.notification_service import create_notification
 
 
 # #region debug-point B:admin-review-service
