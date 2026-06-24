@@ -1,41 +1,121 @@
 {% extends "base.html" %}
 {% block title %}通知{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h4 class="mb-0"><i class="bi bi-bell"></i> 通知</h4>
-    <form method="post" action="{{ url_for('notification.read_all') }}">
-        <button class="btn btn-sm btn-outline-secondary">全部标记已读</button>
-    </form>
+
+{# Type config: icon, color var, label #}
+{% set type_config = {
+    'SYSTEM':  {'icon': 'bi-megaphone',      'label': '系统'},
+    'AUDIT':   {'icon': 'bi-clipboard-check', 'label': '审核'},
+    'ORDER':   {'icon': 'bi-bag-check',       'label': '订单'},
+    'REVIEW':  {'icon': 'bi-star-half',        'label': '评价'},
+    'FAVORITE':{'icon': 'bi-heart',            'label': '收藏'},
+    'REPORT':  {'icon': 'bi-flag',             'label': '举报'},
+    'ACCOUNT': {'icon': 'bi-person-gear',      'label': '账号'}
+} %}
+
+<div class="notif-page-bg">
+
+{# Header #}
+<div class="notif-page-header">
+    <h4><i class="bi bi-bell"></i> 通知</h4>
+    <div class="notif-page-actions">
+        <form method="post" action="{{ url_for('notification.read_all') }}">
+            <button class="btn btn-sm btn-outline-secondary" style="border-radius:10px; background:rgba(255,255,255,0.4); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.3);">
+                <i class="bi bi-check-all me-1"></i>全部已读
+            </button>
+        </form>
+        {% if notifications %}
+        <form method="post" action="{{ url_for('notification.delete_all') }}"
+              onsubmit="return confirm('确定删除所有通知？此操作不可撤销。')">
+            <button class="btn btn-sm btn-outline-danger" style="border-radius:10px; background:rgba(255,255,255,0.4); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.3);">
+                <i class="bi bi-trash me-1"></i>一键删除
+            </button>
+        </form>
+        {% endif %}
+    </div>
 </div>
-<ul class="nav nav-pills mb-3">
-    <li class="nav-item"><a class="nav-link {{ 'active' if not current_filter }}" href="{{ url_for('notification.list') }}">全部</a></li>
-    <li class="nav-item"><a class="nav-link {{ 'active' if current_filter == 'SYSTEM' }}" href="{{ url_for('notification.list', type='SYSTEM') }}">系统</a></li>
-    <li class="nav-item"><a class="nav-link {{ 'active' if current_filter == 'ORDER' }}" href="{{ url_for('notification.list', type='ORDER') }}">订单</a></li>
-    <li class="nav-item"><a class="nav-link {{ 'active' if current_filter == 'REPORT' }}" href="{{ url_for('notification.list', type='REPORT') }}">举报</a></li>
-</ul>
+
+{# Filter Pills #}
+<div class="notif-filters">
+    <a href="{{ url_for('notification.list') }}"
+       class="notif-filter-pill {{ 'active' if not current_filter }}">
+        全部
+    </a>
+    {% for ntype, cfg in type_config.items() %}
+    <a href="{{ url_for('notification.list', type=ntype) }}"
+       class="notif-filter-pill {{ 'active' if current_filter == ntype }}">
+        <span class="pill-dot" style="background:var(--nt-{{ ntype|lower }});"></span>
+        {{ cfg.label }}
+    </a>
+    {% endfor %}
+</div>
+
+{# Notification List #}
 {% if notifications %}
-<div class="list-group">
+<div class="notif-list">
     {% for n in notifications %}
-    <div class="list-group-item notification-item {{ 'list-group-item-light' if not n.read_status }}">
-        <div class="d-flex justify-content-between">
-            <div class="d-flex align-items-center gap-2">
-                {% if not n.read_status %}
-                <span class="notification-unread-dot" aria-label="未读通知"></span>
-                {% endif %}
-                <div>
-                <span class="badge bg-{{ 'primary' if n.notification_type == 'SYSTEM' else 'warning' if n.notification_type == 'ORDER' else 'danger' }} me-2">{{ n.type_display }}</span>
-                <strong>{{ n.title }}</strong>
-                </div>
+    {% set cfg = type_config.get(n.notification_type, {'icon': 'bi-bell', 'label': n.notification_type}) %}
+    <div class="notif-card {{ 'unread' if not n.read_status }} {{ 'clickable' if n.target_url }} nt-{{ n.notification_type }}"
+         {% if n.target_url %}style="cursor:pointer" onclick="window.location='{{ n.target_url }}'"{% endif %}>
+        {# Icon #}
+        <div style="padding:16px 0 16px 16px; display:flex; align-items:flex-start;">
+            <div class="notif-icon nt-{{ n.notification_type }}">
+                <i class="bi {{ cfg.icon }}"></i>
             </div>
-            <small class="text-muted">{{ n.created_at.strftime('%Y-%m-%d %H:%M') }}</small>
         </div>
-        <p class="mb-0 mt-1 text-muted small">{{ n.content }}</p>
+        {# Body #}
+        <div class="notif-body">
+            <div class="notif-head">
+                <span class="notif-type-label nt-{{ n.notification_type }}">{{ cfg.label }}</span>
+                <span class="notif-title">{{ n.title }}</span>
+                {% if not n.read_status %}
+                <span class="notif-new-badge">新</span>
+                {% endif %}
+            </div>
+            <p class="notif-content">{{ n.content }}</p>
+            <div class="notif-meta">
+                <span class="notif-time">{{ n.created_at.strftime('%Y-%m-%d %H:%M') }}</span>
+                {% if n.related_id and n.related_exists == False %}
+                <span class="notif-deleted-hint"><i class="bi bi-link-45deg-slash"></i>关联内容已删除</span>
+                {% endif %}
+            </div>
+        </div>
+        {# Actions #}
+        <div class="notif-actions" onclick="event.stopPropagation()">
+            {% if not n.read_status %}
+            <form method="post" action="{{ url_for('notification.read_single', nid=n.notification_id) }}" class="d-inline">
+                <button type="submit" class="notif-action-btn" title="标记已读">
+                    <i class="bi bi-check-lg"></i>
+                </button>
+            </form>
+            {% endif %}
+            <form method="post" action="{{ url_for('notification.delete', nid=n.notification_id) }}" class="d-inline"
+                  onsubmit="return confirm('确定删除此通知？')">
+                <button type="submit" class="notif-action-btn btn-delete" title="删除">
+                    <i class="bi bi-trash3"></i>
+                </button>
+            </form>
+        </div>
     </div>
     {% endfor %}
 </div>
+
+{# Pagination #}
 {% from "partials/_pagination.html" import render_pagination %}
+<div class="mt-4">
 {{ render_pagination(pagination, 'notification.list') }}
+</div>
+
 {% else %}
-<div class="text-center py-5 text-muted">暂无通知</div>
+{# Empty State #}
+<div class="notif-empty">
+    <div class="notif-empty-icon">
+        <i class="bi bi-bell-slash"></i>
+    </div>
+    <h5>暂无通知</h5>
+    <p>新的消息通知会在这里显示</p>
+</div>
 {% endif %}
+
+</div><!-- /notif-page-bg -->
 {% endblock %}

@@ -38,7 +38,7 @@ class User(UserMixin, db.Model):
     reviews_given = db.relationship('Review', backref='reviewer', lazy='dynamic', foreign_keys='Review.reviewer_id')
     reviews_received = db.relationship('Review', backref='reviewed_user', lazy='dynamic', foreign_keys='Review.reviewed_user_id')
     reports_filed = db.relationship('Report', backref='reporter', lazy='dynamic', foreign_keys='Report.reporter_id')
-    notifications = db.relationship('Notification', backref='receiver_ref', lazy='dynamic')
+    notifications = db.relationship('Notification', backref='receiver_ref', lazy='dynamic', foreign_keys='Notification.receiver_id')
 
     def get_id(self):
         return str(self.user_id)

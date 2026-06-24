@@ -1,6 +1,7 @@
 from app.extensions import db
 from app.models.review import Review
 from app.models.orders import Order
+from app.services.notification_service import create_notification
 import re
 from html import escape
 
@@ -56,6 +57,16 @@ def submit_review(order_id, reviewer_id, score, content=None):
         review_content=filtered_content
     )
     db.session.add(review)
+
+    # 通知被评价方
+    reviewer_name = review.reviewer.nickname or review.reviewer.username if review.reviewer else '用户'
+    create_notification(
+        receiver_id=reviewed_user_id, ntype='REVIEW',
+        title='收到新评价',
+        content=f'用户 {reviewer_name} 对您的服务给出了 {score} 星评价。',
+        related_id=order_id, sender_id=reviewer_id
+    )
+
     db.session.commit()
     return True, '评价提交成功！'
 

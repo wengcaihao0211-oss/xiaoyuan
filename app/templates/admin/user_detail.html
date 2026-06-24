@@ -1,48 +1,121 @@
-{% extends "base.html" %}
-{% block title %}用户详情{% endblock %}
+{% extends "admin_base.html" %}
+{% block title %}用户详情 - {{ user.username }}{% endblock %}
+{% block page_title %}用户详情{% endblock %}
 {% block content %}
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">管理后台</a></li>
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0" style="font-size:0.85rem;">
         <li class="breadcrumb-item"><a href="{{ url_for('admin.user_list') }}">用户管理</a></li>
         <li class="breadcrumb-item active">{{ user.username }}</li>
     </ol>
 </nav>
-<div class="row">
-    <div class="col-md-4">
-        <div class="card shadow-sm text-center">
-            <div class="card-body">
+
+<div class="row g-4">
+    <!-- Profile Card -->
+    <div class="col-lg-4">
+        <div class="admin-card text-center">
+            <div class="card-body py-4">
                 {% if user.avatar %}
-                <img src="{{ url_for('static', filename=user.avatar) }}" class="rounded-circle mb-3" width="100" height="100" style="object-fit:cover">
+                <img src="{{ url_for('static', filename=user.avatar) }}" class="rounded-circle mb-3" width="80" height="80" style="object-fit:cover; border:3px solid #E2E8F0;">
                 {% else %}
-                <i class="bi bi-person-circle text-muted" style="font-size:100px"></i>
+                <div class="mx-auto mb-3 d-flex align-items-center justify-content-center rounded-circle" style="width:80px;height:80px;background:var(--primary-light);color:var(--primary-dark);font-size:2rem;font-weight:800;">
+                    {{ user.username[0] }}
+                </div>
                 {% endif %}
-                <h4>{{ user.username }}</h4>
-                <span class="badge bg-{{ 'success' if user.status == 'ACTIVE' else 'danger' }}">{{ '正常' if user.status == 'ACTIVE' else '已禁用' }}</span>
+                <h5 class="fw-bold mb-1">{{ user.username }}</h5>
+                <p class="text-muted mb-3" style="font-size:0.85rem;">{{ user.introduction or '暂无简介' }}</p>
+                <div class="d-flex justify-content-center gap-2">
+                    {% if user.status == 'ACTIVE' %}
+                    <span class="badge" style="background:#D1FAE5;color:#047857;">正常</span>
+                    {% else %}
+                    <span class="badge" style="background:#FEE2E2;color:#B91C1C;">已禁用</span>
+                    {% endif %}
+                    {% if user.role == 'ADMIN' %}
+                    <span class="badge" style="background:#EEF2FF;color:#6366F1;">管理员</span>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-8">
-        <div class="card shadow-sm mb-3">
-            <div class="card-header"><h6 class="mb-0">基本信息</h6></div>
+
+    <!-- Info + Stats -->
+    <div class="col-lg-8">
+        <!-- Basic Info -->
+        <div class="admin-card mb-4">
+            <div class="card-header">
+                <span><i class="bi bi-person-lines-fill me-2 text-primary"></i>基本信息</span>
+            </div>
             <div class="card-body">
-                <table class="table table-sm">
-                    <tr><th width="100">用户名</th><td>{{ user.username }}</td></tr>
-                    <tr><th>手机号</th><td>{{ mask_phone(user.phone) }}</td></tr>
-                    <tr><th>角色</th><td>{{ '管理员' if user.role == 'ADMIN' else '普通用户' }}</td></tr>
-                    <tr><th>简介</th><td>{{ user.introduction or '无' }}</td></tr>
-                    <tr><th>注册时间</th><td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td></tr>
-                </table>
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="text-muted" style="font-size:0.8rem;font-weight:600;">用户名</div>
+                        <div class="fw-bold">{{ user.username }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted" style="font-size:0.8rem;font-weight:600;">手机号</div>
+                        <div class="fw-bold">{{ mask_phone(user.phone) }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted" style="font-size:0.8rem;font-weight:600;">邮箱</div>
+                        <div class="fw-bold">{{ user.email or '未填写' }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted" style="font-size:0.8rem;font-weight:600;">角色</div>
+                        <div class="fw-bold">{{ '管理员' if user.role == 'ADMIN' else '普通用户' }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted" style="font-size:0.8rem;font-weight:600;">注册时间</div>
+                        <div class="fw-bold">{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted" style="font-size:0.8rem;font-weight:600;">最后登录</div>
+                        <div class="fw-bold">{{ user.last_login_at.strftime('%Y-%m-%d %H:%M') if user.last_login_at else '从未登录' }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted" style="font-size:0.8rem;font-weight:600;">最后登录IP</div>
+                        <div class="fw-bold">{{ user.last_login_ip or '无' }}</div>
+                    </div>
+                </div>
             </div>
         </div>
-        <div class="card shadow-sm">
-            <div class="card-header"><h6 class="mb-0">数据统计</h6></div>
+
+        <!-- Stats -->
+        <div class="admin-card">
+            <div class="card-header">
+                <span><i class="bi bi-bar-chart me-2 text-success"></i>数据统计</span>
+            </div>
             <div class="card-body">
-                <div class="row text-center">
-                    <div class="col-3"><h4>{{ stats.product_count }}</h4><small class="text-muted">发布商品</small></div>
-                    <div class="col-3"><h4>{{ stats.sold_count }}</h4><small class="text-muted">已售出</small></div>
-                    <div class="col-3"><h4>{{ stats.avg_rating or '-' }}</h4><small class="text-muted">平均评分</small></div>
-                    <div class="col-3"><h4>{{ stats.review_count }}</h4><small class="text-muted">收到评价</small></div>
+                <div class="row text-center g-3">
+                    <div class="col">
+                        <div class="p-3 rounded-3" style="background:rgba(99,102,241,0.1);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">
+                            <div class="fw-bold fs-4" style="color:#6366F1;">{{ stats.product_count }}</div>
+                            <div class="text-muted" style="font-size:0.8rem;">发布商品</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="p-3 rounded-3" style="background:rgba(5,150,105,0.1);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">
+                            <div class="fw-bold fs-4" style="color:#059669;">{{ stats.sold_count }}</div>
+                            <div class="text-muted" style="font-size:0.8rem;">已售出</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="p-3 rounded-3" style="background:rgba(217,119,6,0.1);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">
+                            <div class="fw-bold fs-4" style="color:#D97706;">{{ stats.order_count }}</div>
+                            <div class="text-muted" style="font-size:0.8rem;">参与订单</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="p-3 rounded-3" style="background:rgba(220,38,38,0.1);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">
+                            <div class="fw-bold fs-4" style="color:#DC2626;">{{ stats.avg_rating or '-' }}</div>
+                            <div class="text-muted" style="font-size:0.8rem;">平均评分</div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="p-3 rounded-3" style="background:rgba(71,85,105,0.08);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">
+                            <div class="fw-bold fs-4" style="color:#475569;">{{ stats.review_count }}</div>
+                            <div class="text-muted" style="font-size:0.8rem;">收到评价</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

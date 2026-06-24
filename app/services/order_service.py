@@ -2,7 +2,7 @@ from datetime import datetime
 from app.extensions import db
 from app.models.orders import Order
 from app.models.product import Product
-from app.models.notification import Notification
+from app.services.notification_service import create_notification
 from app.utils.helpers import generate_order_no, generate_transaction_no
 import re
 
@@ -118,16 +118,15 @@ class OrderService:
                 payment_status='UNPAID'
             )
             db.session.add(order)
+            db.session.flush()
             
             # 向卖家生成待处理通知
-            notify = Notification(
-                receiver_id=product.seller_id,
-                notification_type='ORDER',
+            create_notification(
+                receiver_id=product.seller_id, ntype='ORDER',
                 title='新的购买订单',
                 content=f'您的商品「{product.product_name}」收到新的购买订单。',
-                related_id=order.order_id
+                related_id=order.order_id, sender_id=buyer_id
             )
-            db.session.add(notify)
             
             # 5) 整个过程使用事务
             db.session.commit()
@@ -160,12 +159,11 @@ class OrderService:
         for o in other_orders:
             o.order_status = 'CANCELLED'
 
-        notify = Notification(
-            receiver_id=order.buyer_id, notification_type='ORDER',
+        create_notification(
+            receiver_id=order.buyer_id, ntype='ORDER',
             title='订单已确认', content=f'您的订单 {order.order_no} 已被卖家确认。',
-            related_id=order.order_id
+            related_id=order.order_id, sender_id=seller_id
         )
-        db.session.add(notify)
         db.session.commit()
         return True, '订单已确认。'
 
@@ -180,13 +178,12 @@ class OrderService:
         order.order_status = 'REJECTED'
         order.reject_reason = reason.strip()
 
-        notify = Notification(
-            receiver_id=order.buyer_id, notification_type='ORDER',
+        create_notification(
+            receiver_id=order.buyer_id, ntype='ORDER',
             title='订单已被拒绝',
             content=f'您的订单 {order.order_no} 已被卖家拒绝。原因：{reason}',
-            related_id=order.order_id
+            related_id=order.order_id, sender_id=seller_id
         )
-        db.session.add(notify)
         db.session.commit()
         return True, '已拒绝该订单。'
 
@@ -202,12 +199,11 @@ class OrderService:
             return False, '订单当前状态无法取消。'
         order.order_status = 'CANCELLED'
 
-        notify = Notification(
-            receiver_id=order.seller_id, notification_type='ORDER',
+        create_notification(
+            receiver_id=order.seller_id, ntype='ORDER',
             title='订单已取消', content=f'订单 {order.order_no} 已被买家取消。',
-            related_id=order.order_id
+            related_id=order.order_id, sender_id=buyer_id
         )
-        db.session.add(notify)
         db.session.commit()
         return True, '订单已取消。'
 
@@ -227,18 +223,16 @@ class OrderService:
         order.paid_at = datetime.utcnow()
         order.order_status = 'PAID'
 
-        notify_b = Notification(
-            receiver_id=order.buyer_id, notification_type='ORDER',
+        create_notification(
+            receiver_id=order.buyer_id, ntype='ORDER',
             title='支付成功', content=f'订单 {order.order_no} 支付成功。交易编号：{transaction_no}',
-            related_id=order.order_id
+            related_id=order.order_id, sender_id=buyer_id
         )
-        notify_s = Notification(
-            receiver_id=order.seller_id, notification_type='ORDER',
+        create_notification(
+            receiver_id=order.seller_id, ntype='ORDER',
             title='买家已支付', content=f'订单 {order.order_no} 买家已完成支付。',
-            related_id=order.order_id
+            related_id=order.order_id, sender_id=buyer_id
         )
-        db.session.add(notify_b)
-        db.session.add(notify_s)
         db.session.commit()
         return True, f'支付成功！交易编号：{transaction_no}'
 
@@ -260,12 +254,11 @@ class OrderService:
         if product:
             product.product_status = 'SOLD'
 
-        notify = Notification(
-            receiver_id=order.seller_id, notification_type='ORDER',
+        create_notification(
+            receiver_id=order.seller_id, ntype='ORDER',
             title='交易完成', content=f'订单 {order.order_no} 买家已确认收货，交易完成。',
-            related_id=order.order_id
+            related_id=order.order_id, sender_id=buyer_id
         )
-        db.session.add(notify)
         db.session.commit()
         return True, '交易完成！可以互相评价了。'
 

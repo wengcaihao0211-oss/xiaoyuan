@@ -1,57 +1,80 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 {% block title %}商品审核{% endblock %}
+{% block page_title %}商品审核{% endblock %}
 {% block content %}
-<h4 class="mb-3">商品审核 <span class="badge bg-warning">{{ products|length }}</span></h4>
+
 {% if products %}
-<div class="table-responsive">
-    <table class="table table-hover">
-        <thead class="table-light">
-            <tr><th width="80">图片</th><th>商品名称</th><th>卖家</th><th>价格</th><th>成色</th><th>分类</th><th>提交时间</th><th>操作</th></tr>
-        </thead>
-        <tbody>
-            {% for p in products %}
-            <tr>
-                <td>
-                    {% if p.cover_image %}
-                    <img src="{{ url_for('static', filename=p.cover_image) }}" width="60" height="60" style="object-fit:cover" class="rounded">
-                    {% else %}<div class="bg-light rounded" style="width:60px;height:60px"></div>{% endif %}
-                </td>
-                <td><a href="{{ url_for('browse.detail', id=p.product_id) }}" target="_blank">{{ p.product_name }}</a></td>
-                <td>{{ p.seller.username }}</td>
-                <td>¥{{ '%.2f'|format(p.price) }}</td>
-                <td>{{ p.condition_level }}</td>
-                <td>{{ p.category.category_name }}</td>
-                <td><small>{{ p.created_at.strftime('%m-%d %H:%M') }}</small></td>
-                <td>
-                    <div class="d-flex gap-1">
-                        <form method="post" action="{{ url_for('admin.approve_product', id=p.product_id) }}">
-                            <button class="btn btn-success btn-sm">通过</button>
-                        </form>
-                        <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#rejectModal{{ p.product_id }}">驳回</button>
-                    </div>
-                    <!-- Reject Modal -->
-                    <div class="modal fade" id="rejectModal{{ p.product_id }}" tabindex="-1">
-                        <div class="modal-dialog">
-                            <form method="post" action="{{ url_for('admin.reject_product', id=p.product_id) }}" class="modal-content">
-                                <div class="modal-header"><h5 class="modal-title">驳回商品</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                                <div class="modal-body">
-                                    <label class="form-label">驳回原因（2~500字）</label>
-                                    <textarea name="reason" class="form-control" rows="3" required minlength="2" maxlength="500"></textarea>
+<div class="admin-card">
+    <div class="card-header">
+        <span>待审核商品 <span class="badge" style="background:#FEF3C7;color:#B45309;">{{ products|length }}</span></span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr><th width="70">图片</th><th>商品名称</th><th>卖家</th><th>价格</th><th>成色</th><th>分类</th><th>提交时间</th><th>操作</th></tr>
+                </thead>
+                <tbody>
+                    {% for p in products %}
+                    <tr>
+                        <td>
+                            {% if p.cover_image %}
+                            <img src="{{ url_for('static', filename=p.cover_image) }}" width="50" height="50" style="object-fit:cover" class="rounded">
+                            {% else %}
+                            <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width:50px;height:50px;">
+                                <i class="bi bi-image text-muted"></i>
+                            </div>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('browse.detail', id=p.product_id) }}" target="_blank" class="fw-bold text-decoration-none">{{ p.product_name }}</a>
+                        </td>
+                        <td>{{ p.seller.username }}</td>
+                        <td class="fw-bold" style="color:#DC2626;">¥{{ '%.2f'|format(p.price) }}</td>
+                        <td><span class="badge" style="background:#F1F5F9;color:#475569;">{{ p.condition_level }}</span></td>
+                        <td>{{ p.category.category_name }}</td>
+                        <td><small class="text-muted">{{ p.created_at.strftime('%m-%d %H:%M') }}</small></td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <form method="post" action="{{ url_for('admin.approve_product', id=p.product_id) }}">
+                                    <button class="btn btn-sm" style="background:#D1FAE5;color:#047857;border:none;"><i class="bi bi-check-lg me-1"></i>通过</button>
+                                </form>
+                                <button class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#rejectModal{{ p.product_id }}">
+                                    <i class="bi bi-x-lg me-1"></i>驳回
+                                </button>
+                            </div>
+                            <!-- Reject Modal -->
+                            <div class="modal fade" id="rejectModal{{ p.product_id }}" tabindex="-1">
+                                <div class="modal-dialog">
+                                    <form method="post" action="{{ url_for('admin.reject_product', id=p.product_id) }}" class="modal-content" style="border-radius:16px;overflow:hidden;">
+                                        <div class="modal-header border-0 pb-0">
+                                            <h5 class="modal-title fw-bold">驳回商品</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <label class="form-label fw-bold">驳回原因（2~500字）</label>
+                                            <textarea name="reason" class="form-control" rows="3" required minlength="2" maxlength="500" placeholder="请输入驳回原因..."></textarea>
+                                        </div>
+                                        <div class="modal-footer border-0">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                            <button type="submit" class="btn btn-danger">确认驳回</button>
+                                        </div>
+                                    </form>
                                 </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                                    <button type="submit" class="btn btn-danger">确认驳回</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 {% else %}
-<div class="text-center py-5 text-muted">暂无待审核商品</div>
+<div class="admin-empty">
+    <i class="bi bi-clipboard-check"></i>
+    <h5>暂无待审核商品</h5>
+    <p>所有商品均已审核完毕</p>
+</div>
 {% endif %}
 {% endblock %}

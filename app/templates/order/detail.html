@@ -9,43 +9,93 @@
     </ol>
 </nav>
 
-<div class="row">
-    <div class="col-md-8">
-        <div class="card shadow-sm mb-3">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">订单 {{ order.order_no }}</h5>
-                <span class="badge bg-{{ 'warning' if order.order_status=='PENDING' else 'info' if order.order_status=='CONFIRMED' else 'primary' if order.order_status=='PAID' else 'success' if order.order_status=='COMPLETED' else 'secondary' }} fs-6">{{ order.status_display }}</span>
-            </div>
-            <div class="card-body">
-                <div class="d-flex gap-3 mb-3">
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="order-detail-card">
+            {# 产品信息区 #}
+            <div class="card-body pb-0">
+                <div class="d-flex gap-3 align-items-center mb-3">
                     {% if product and product.cover_image %}
-                    <img src="{{ url_for('static', filename=product.cover_image) }}" width="100" height="100" style="object-fit:cover" class="rounded">
+                    <img src="{{ url_for('static', filename=product.cover_image) }}" width="80" height="80" style="object-fit:cover;border-radius:12px;" class="flex-shrink-0">
                     {% endif %}
-                    <div>
-                        <h6><a href="{{ url_for('browse.detail', id=order.product_id) }}">{{ product.product_name if product else '商品已删除' }}</a></h6>
-                        <p class="text-danger fw-bold fs-5">¥{{ '%.2f'|format(order.order_amount) }}</p>
-                        <p class="text-muted small mb-0">交易方式：{{ '线上交易' if order.trade_type == 'ONLINE' else '线下交易' }}</p>
+                    <div class="flex-grow-1 min-width-0">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h5 class="mb-1 fw-bold">
+                                    <a href="{{ url_for('browse.detail', id=order.product_id) }}" style="text-decoration:none;color:inherit;">{{ product.product_name if product else '商品已删除' }}</a>
+                                </h5>
+                                <p class="text-danger fw-bold fs-4 mb-1">¥{{ '%.2f'|format(order.order_amount) }}</p>
+                            </div>
+                            <span class="badge bg-{{ 'warning' if order.order_status=='PENDING' else 'info' if order.order_status=='CONFIRMED' else 'primary' if order.order_status=='PAID' else 'success' if order.order_status=='COMPLETED' else 'secondary' }} fs-6 flex-shrink-0">{{ order.status_display }}</span>
+                        </div>
+                        <p class="text-muted small mb-0">
+                            <i class="bi bi-geo-alt me-1"></i>{{ '线上交易' if order.trade_type == 'ONLINE' else '线下交易' }}
+                            <span class="mx-2">·</span>
+                            <i class="bi bi-receipt me-1"></i>{{ order.order_no }}
+                        </p>
                     </div>
                 </div>
-
-                <table class="table table-sm">
-                    <tr><th width="80">买家</th><td>{{ buyer.username }}</td></tr>
-                    <tr><th>卖家</th><td>{{ seller.username }}</td></tr>
-                    <tr><th>买家留言</th><td>{{ order.buyer_message or '无' }}</td></tr>
-                    {% if order.reject_reason %}
-                    <tr><th>拒绝原因</th><td class="text-danger">{{ order.reject_reason }}</td></tr>
-                    {% endif %}
-                    <tr><th>创建时间</th><td>{{ order.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td></tr>
-                    {% if order.paid_at %}<tr><th>支付时间</th><td>{{ order.paid_at.strftime('%Y-%m-%d %H:%M:%S') }}</td></tr>{% endif %}
-                    {% if order.completed_at %}<tr><th>完成时间</th><td>{{ order.completed_at.strftime('%Y-%m-%d %H:%M:%S') }}</td></tr>{% endif %}
-                </table>
             </div>
-        </div>
 
-        <!-- Timeline -->
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white"><h6 class="mb-0 fw-bold">订单进度</h6></div>
+            {# 分割线 #}
+            <hr class="my-0" style="border-color:rgba(0,0,0,0.06);">
+
+            {# 订单信息网格 #}
             <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="order-info-grid-item">
+                            <div class="order-info-grid-label">买家</div>
+                            <div class="order-info-grid-value">{{ buyer.username }}</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="order-info-grid-item">
+                            <div class="order-info-grid-label">卖家</div>
+                            <div class="order-info-grid-value">{{ seller.username }}</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="order-info-grid-item">
+                            <div class="order-info-grid-label">创建时间</div>
+                            <div class="order-info-grid-value">{{ order.created_at.strftime('%m-%d %H:%M') }}</div>
+                        </div>
+                    </div>
+                    {% if order.paid_at %}
+                    <div class="col-sm-6">
+                        <div class="order-info-grid-item">
+                            <div class="order-info-grid-label">支付时间</div>
+                            <div class="order-info-grid-value">{{ order.paid_at.strftime('%m-%d %H:%M') }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if order.completed_at %}
+                    <div class="col-sm-6">
+                        <div class="order-info-grid-item">
+                            <div class="order-info-grid-label">完成时间</div>
+                            <div class="order-info-grid-value">{{ order.completed_at.strftime('%m-%d %H:%M') }}</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% if order.buyer_message %}
+                <div class="mt-3 p-3" style="background:rgba(0,0,0,0.02);border-radius:12px;">
+                    <div class="small text-muted mb-1"><i class="bi bi-chat-dots me-1"></i>买家留言</div>
+                    <div class="mb-0">{{ order.buyer_message }}</div>
+                </div>
+                {% endif %}
+                {% if order.reject_reason %}
+                <div class="mt-3 p-3" style="background:rgba(220,38,38,0.04);border-radius:12px;">
+                    <div class="small text-danger mb-1"><i class="bi bi-x-circle me-1"></i>拒绝原因</div>
+                    <div class="mb-0 text-danger">{{ order.reject_reason }}</div>
+                </div>
+                {% endif %}
+            </div>
+
+            {# 订单进度 - 内嵌在同一个卡片内 #}
+            <hr class="my-0" style="border-color:rgba(0,0,0,0.06);">
+            <div class="card-body">
+                <h6 class="fw-bold mb-3"><i class="bi bi-signpost-split me-2 text-primary"></i>订单进度</h6>
                 <div class="timeline">
                     {% set steps = [('PENDING','提交'),('CONFIRMED','确认'),('PAID','支付'),('COMPLETED','完成')] %}
                     {% set status_order = {'PENDING':0,'CONFIRMED':1,'PAID':2,'COMPLETED':3} %}
@@ -69,43 +119,57 @@
         </div>
     </div>
 
-    <!-- Actions -->
-    <div class="col-md-4">
-        <div class="card shadow-sm">
-            <div class="card-header"><h6 class="mb-0">操作</h6></div>
+    <!-- 操作栏 -->
+    <div class="col-lg-4">
+        <div class="order-detail-card order-actions" style="position:sticky;top:104px;">
+            <div class="card-header">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-lightning-charge me-2 text-primary"></i>操作</h6>
+            </div>
             <div class="card-body d-grid gap-2">
                 {% if current_user.user_id == order.seller_id %}
                     {% if order.order_status == 'PENDING' %}
                     <form method="post" action="{{ url_for('order.confirm', id=order.order_id) }}">
-                        <button class="btn btn-success w-100">确认订单</button>
+                        <button class="btn btn-success w-100 py-2"><i class="bi bi-check-lg me-1"></i>确认订单</button>
                     </form>
-                    <button class="btn btn-outline-danger w-100" data-bs-toggle="modal" data-bs-target="#rejectModal">拒绝订单</button>
+                    <button class="btn btn-outline-danger w-100 py-2" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                        <i class="bi bi-x-lg me-1"></i>拒绝订单
+                    </button>
                     {% endif %}
                 {% elif current_user.user_id == order.buyer_id %}
                     {% if order.order_status in ('PENDING', 'CONFIRMED') %}
                     <form method="post" action="{{ url_for('order.cancel', id=order.order_id) }}" onsubmit="return confirm('确定取消订单？')">
-                        <button class="btn btn-outline-danger w-100">取消订单</button>
+                        <button class="btn btn-outline-danger w-100 py-2"><i class="bi bi-x-circle me-1"></i>取消订单</button>
                     </form>
                     {% endif %}
                     {% if order.order_status == 'CONFIRMED' and order.trade_type == 'ONLINE' %}
                     <form method="post" action="{{ url_for('order.pay', id=order.order_id) }}">
-                        <button class="btn btn-primary w-100">模拟支付</button>
+                        <button class="btn btn-primary w-100 py-2"><i class="bi bi-credit-card me-1"></i>模拟支付</button>
                     </form>
                     {% endif %}
                     {% if (order.trade_type == 'ONLINE' and order.order_status == 'PAID') or (order.trade_type == 'OFFLINE' and order.order_status == 'CONFIRMED') %}
                     <form method="post" action="{{ url_for('order.complete', id=order.order_id) }}" onsubmit="return confirm('确认已收到商品？')">
-                        <button class="btn btn-success w-100">确认收货</button>
+                        <button class="btn btn-success w-100 py-2"><i class="bi bi-check-circle me-1"></i>确认收货</button>
                     </form>
                     {% endif %}
                 {% endif %}
 
                 {% if order.order_status == 'COMPLETED' %}
                     {% if not order.reviews.filter_by(reviewer_id=current_user.user_id).first() %}
-                    <a href="{{ url_for('social.review', order_id=order.order_id) }}" class="btn btn-outline-warning w-100">去评价</a>
+                    <a href="{{ url_for('social.review', order_id=order.order_id) }}" class="btn btn-outline-warning w-100 py-2">
+                        <i class="bi bi-star me-1"></i>去评价
+                    </a>
                     {% else %}
-                    <button class="btn btn-outline-secondary w-100" disabled>已评价</button>
+                    <button class="btn btn-outline-secondary w-100 py-2" disabled>
+                        <i class="bi bi-check2-all me-1"></i>已评价
+                    </button>
                     {% endif %}
                 {% endif %}
+
+                {# 快捷链接 #}
+                <hr class="my-2" style="border-color:rgba(0,0,0,0.06);">
+                <a href="{{ url_for('browse.detail', id=order.product_id) }}" class="btn btn-link text-muted small text-decoration-none px-0">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>查看商品详情
+                </a>
             </div>
         </div>
     </div>
@@ -113,33 +177,31 @@
 
 <!-- 评价展示 -->
 {% if order.order_status == 'COMPLETED' and order.reviews.count() > 0 %}
-<div class="row mt-3">
-    <div class="col-md-12">
-        <div class="card shadow-sm">
-            <div class="card-header"><h6 class="mb-0">交易评价</h6></div>
-            <div class="card-body">
-                {% for review in order.reviews %}
-                <div class="mb-3 p-3 bg-light rounded">
-                    <div class="d-flex justify-content-between align-items-center mb-2">
-                        <strong>{{ review.reviewer.username }}</strong>
-                        <span class="text-muted small">{{ review.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
-                    </div>
-                    <div class="mb-2">
-                        {% for i in range(1, 6) %}
-                        {% if i <= review.score %}
-                        <i class="bi bi-star-fill text-warning"></i>
-                        {% else %}
-                        <i class="bi bi-star text-muted"></i>
-                        {% endif %}
-                        {% endfor %}
-                        <span class="ms-2">({{ review.score }}星)</span>
-                    </div>
-                    {% if review.review_content %}
-                    <p class="mb-0">{{ review.review_content }}</p>
-                    {% endif %}
+<div class="mt-4">
+    <div class="order-detail-card">
+        <div class="card-header"><h6 class="mb-0 fw-bold"><i class="bi bi-star-half me-2 text-warning"></i>交易评价</h6></div>
+        <div class="card-body">
+            {% for review in order.reviews %}
+            <div class="order-review-item">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>{{ review.reviewer.username }}</strong>
+                    <span class="text-muted small">{{ review.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</span>
                 </div>
-                {% endfor %}
+                <div class="mb-2">
+                    {% for i in range(1, 6) %}
+                    {% if i <= review.score %}
+                    <i class="bi bi-star-fill text-warning"></i>
+                    {% else %}
+                    <i class="bi bi-star text-muted"></i>
+                    {% endif %}
+                    {% endfor %}
+                    <span class="ms-2 small">({{ review.score }}星)</span>
+                </div>
+                {% if review.review_content %}
+                <p class="mb-0">{{ review.review_content }}</p>
+                {% endif %}
             </div>
+            {% endfor %}
         </div>
     </div>
 </div>

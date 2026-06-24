@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ notification.title }} - 通知详情{% endblock %}
+{% block content %}
+
+{# Type config #}
+{% set type_config = {
+    'SYSTEM':  {'icon': 'bi-megaphone',      'label': '系统通知'},
+    'AUDIT':   {'icon': 'bi-clipboard-check', 'label': '审核通知'},
+    'ORDER':   {'icon': 'bi-bag-check',       'label': '订单通知'},
+    'REVIEW':  {'icon': 'bi-star-half',        'label': '评价通知'},
+    'FAVORITE':{'icon': 'bi-heart',            'label': '收藏通知'},
+    'REPORT':  {'icon': 'bi-flag',             'label': '举报通知'},
+    'ACCOUNT': {'icon': 'bi-person-gear',      'label': '账号通知'}
+} %}
+{% set cfg = type_config.get(notification.notification_type, {'icon': 'bi-bell', 'label': notification.notification_type}) %}
+
+<div class="notif-page-bg" style="max-width:700px; margin:0 auto;">
+    {# Breadcrumb #}
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0" style="font-size:0.85rem;">
+            <li class="breadcrumb-item"><a href="{{ url_for('notification.list') }}">通知列表</a></li>
+            <li class="breadcrumb-item active">通知详情</li>
+        </ol>
+    </nav>
+
+    {# Card #}
+    <div class="notif-detail-card">
+        {# Header with type color bar #}
+        <div class="notif-detail-header nt-{{ notification.notification_type }}">
+            <div class="notif-head">
+                <div class="notif-icon nt-{{ notification.notification_type }}">
+                    <i class="bi {{ cfg.icon }}"></i>
+                </div>
+                <div>
+                    <span class="notif-type-label nt-{{ notification.notification_type }}">{{ cfg.label }}</span>
+                    <h5 class="notif-title mt-1 mb-0">{{ notification.title }}</h5>
+                </div>
+            </div>
+            <div class="notif-detail-time">
+                <i class="bi bi-clock me-1"></i>{{ notification.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+            </div>
+        </div>
+
+        {# Body #}
+        <div class="notif-detail-body">
+            <p class="notif-content">{{ notification.content }}</p>
+
+            {% if notification.sender_name %}
+            <div class="notif-detail-sender">
+                <i class="bi bi-person-fill"></i>
+                发送者：{{ notification.sender_name }}
+            </div>
+            {% endif %}
+
+            {% if notification.target_url %}
+            <a href="{{ notification.target_url }}" class="notif-detail-link nt-{{ notification.notification_type }}">
+                <i class="bi bi-box-arrow-up-right"></i>查看关联内容
+            </a>
+            {% elif notification.related_id and notification.related_exists == False %}
+            <div class="notif-detail-disabled">
+                <i class="bi bi-link-45deg-slash"></i>关联内容已删除
+            </div>
+            {% endif %}
+        </div>
+
+        {# Footer #}
+        <div class="notif-detail-footer">
+            <a href="{{ url_for('notification.list') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>返回列表
+            </a>
+            <div class="d-flex gap-2">
+                {% if not notification.read_status %}
+                <form method="post" action="{{ url_for('notification.read_single', nid=notification.notification_id) }}">
+                    <button type="submit" class="btn btn-outline-primary">
+                        <i class="bi bi-check-lg me-1"></i>标记已读
+                    </button>
+                </form>
+                {% endif %}
+                <form method="post" action="{{ url_for('notification.delete', nid=notification.notification_id) }}"
+                      onsubmit="return confirm('确定删除此通知？')">
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="bi bi-trash3 me-1"></i>删除
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div><!-- /notif-page-bg -->
+{% endblock %}

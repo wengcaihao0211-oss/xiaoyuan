@@ -157,14 +157,20 @@ def update_profile(user, nickname=None, phone=None, email=None, introduction=Non
 def get_user_stats(user):
     from app.models.product import Product
     from app.models.review import Review
+    from app.models.orders import Order
     product_count = Product.active().filter_by(seller_id=user.user_id).count()
     sold_count = Product.active().filter_by(seller_id=user.user_id, product_status='SOLD').count()
     avg_rating = db.session.query(db.func.avg(Review.score)).filter(
         Review.reviewed_user_id == user.user_id, Review.deleted == False
     ).scalar()
+    order_count = Order.query.filter(
+        (Order.buyer_id == user.user_id) | (Order.seller_id == user.user_id),
+        Order.deleted == False
+    ).count()
     return {
         'product_count': product_count,
         'sold_count': sold_count,
         'avg_rating': round(float(avg_rating), 1) if avg_rating else None,
         'review_count': Review.active().filter_by(reviewed_user_id=user.user_id).count(),
+        'order_count': order_count,
     }

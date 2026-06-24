@@ -2,6 +2,22 @@
 {% from "partials/_product_card.html" import product_card %}
 {% from "partials/_pagination.html" import render_pagination %}
 {% block title %}我的收藏{% endblock %}
+
+{% block category_bar %}
+{% if not current_user.is_authenticated or not current_user.is_admin() %}
+<div class="category-bar">
+    <div class="container">
+        <div class="d-flex overflow-auto py-2 gap-2 align-items-center">
+            <a href="{{ url_for('browse.home') }}" class="category-chip">全部</a>
+            {% for c in get_categories() %}
+            <a href="{{ url_for('browse.category', id=c.category_id) }}" class="category-chip">{{ c.category_name }}</a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="d-flex align-items-center justify-content-between mb-3">
     <h4><i class="bi bi-heart text-danger"></i> 我的收藏</h4>

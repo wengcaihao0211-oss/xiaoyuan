@@ -130,12 +130,11 @@ def review_product(product_id, action, reason=None, trace_id=None):
     try:
         if action == 'approve':
             product.product_status = 'ON_SALE'
-            notif = Notification(
-                receiver_id=product.seller_id, notification_type='SYSTEM',
+            create_notification(
+                receiver_id=product.seller_id, ntype='AUDIT',
                 title='商品审核通过',
                 content=f'您的商品「{product.product_name}」已通过审核，已自动上架。',
                 related_id=product.product_id)
-            db.session.add(notif)
             _report_admin_review_service(
                 'B',
                 'app/services/admin_service.py:review_product',
@@ -162,12 +161,11 @@ def review_product(product_id, action, reason=None, trace_id=None):
             )
             return False, '驳回原因至少需要2个字符。'
         product.product_status = 'REJECTED'
-        notif = Notification(
-            receiver_id=product.seller_id, notification_type='SYSTEM',
+        create_notification(
+            receiver_id=product.seller_id, ntype='AUDIT',
             title='商品审核未通过',
             content=f'您的商品「{product.product_name}」未通过审核。原因：{reason}',
             related_id=product.product_id)
-        db.session.add(notif)
         _report_admin_review_service(
             'B',
             'app/services/admin_service.py:review_product',

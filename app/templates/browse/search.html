@@ -1,6 +1,22 @@
 {% extends "base.html" %}
 {% from "partials/_product_card.html" import product_card %}
 {% block title %}搜索{% if query %}{{ query }}{% endif %}{% endblock %}
+
+{% block category_bar %}
+{% if not current_user.is_authenticated or not current_user.is_admin() %}
+<div class="category-bar">
+    <div class="container">
+        <div class="d-flex overflow-auto py-2 gap-2 align-items-center">
+            <a href="{{ url_for('browse.home') }}" class="category-chip">全部</a>
+            {% for c in get_categories() %}
+            <a href="{{ url_for('browse.category', id=c.category_id) }}" class="category-chip">{{ c.category_name }}</a>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
 {% block content %}
 <div class="row g-3 g-lg-4 search-layout">
     <!-- Filter Sidebar -->
