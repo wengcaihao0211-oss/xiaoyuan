@@ -7,9 +7,9 @@
 {% if not current_user.is_authenticated or not current_user.is_admin() %}
 <section class="hero">
     <div class="row align-items-center">
-        <div class="col-lg-7">
+        <div class="col-lg-7 hero-copy">
             <h1>校园二手<span class="highlight">好物</span>，<br>发现你的<span class="highlight">心头好</span></h1>
-            <p class="text-secondary mt-3 mb-4" style="font-size:1.05rem;max-width:440px">
+            <p class="text-secondary mt-3 mb-4 hero-subtitle" style="font-size:1.05rem;max-width:440px">
                 专为大学生打造的闲置交易平台，买卖放心，淘你所爱。
             </p>
             <div class="hero-stats">
@@ -28,7 +28,7 @@
             </div>
         </div>
         <div class="col-lg-5 d-none d-lg-flex justify-content-center">
-            <div style="font-size:10rem;opacity:0.15;line-height:1">🎓</div>
+            <div class="hero-illustration" style="font-size:10rem;opacity:0.15;line-height:1">🎓</div>
         </div>
     </div>
 </section>
