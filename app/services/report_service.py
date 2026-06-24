@@ -4,6 +4,7 @@ from app.models.report import Report
 from app.models.product import Product
 from app.models.user import User
 from app.services.ai_review_service import AIReviewService
+from app.services.notification_service import notify_admins
 
 
 def submit_report(reporter_id, target_type, target_id, reason, description=None):
@@ -56,7 +57,14 @@ def submit_report(reporter_id, target_type, target_id, reason, description=None)
     db.session.add(report)
     db.session.commit()
     
-    # 8. 触发AI审核
+    # 通知管理员
+    notify_admins(
+        title='新举报待处理',
+        content=f'收到新的{target_type}举报，原因：{reason}',
+        related_id=report.report_id, sender_id=reporter_id
+    )
+
+    # 触发AI审核
     ai_result = AIReviewService.process_report(report)
     
     # 9. 根据AI审核结果返回不同的消息

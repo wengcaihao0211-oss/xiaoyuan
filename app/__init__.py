@@ -385,10 +385,8 @@ def create_app(config_name='default'):
         }
         if current_user.is_authenticated:
             try:
-                from app.models.notification import Notification
-                unread = Notification.query.filter_by(
-                    receiver_id=current_user.user_id, read_status=False, deleted=False
-                ).count()
+                from app.services.notification_service import get_unread_count
+                unread = get_unread_count(current_user.user_id)
                 ctx['unread_notification_count'] = unread
             except Exception:
                 db.session.rollback()

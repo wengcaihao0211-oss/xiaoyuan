@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}举报结果 #{{ report.report_id }}{% endblock %}
+{% block content %}
+
+<div style="max-width:700px; margin:0 auto;">
+    {# Breadcrumb #}
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0" style="font-size:0.85rem;">
+            <li class="breadcrumb-item"><a href="{{ url_for('notification.list') }}">通知列表</a></li>
+            <li class="breadcrumb-item active">举报结果</li>
+        </ol>
+    </nav>
+
+    {# Report Card #}
+    <div class="notif-detail-card">
+        {# Header #}
+        <div class="notif-detail-header nt-REPORT">
+            <div class="notif-head">
+                <div class="notif-icon nt-REPORT">
+                    <i class="bi bi-flag"></i>
+                </div>
+                <div>
+                    <span class="notif-type-label nt-REPORT">举报通知</span>
+                    <h5 class="notif-title mt-1 mb-0">举报处理结果</h5>
+                </div>
+            </div>
+            <div class="notif-detail-time">
+                {% if report.report_status == 'PENDING' %}
+                <span class="badge" style="background:rgba(251,191,36,0.18);color:#B45309;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.2);">待处理</span>
+                {% elif report.report_status == 'DISMISSED' %}
+                <span class="badge" style="background:rgba(100,116,139,0.18);color:#475569;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.2);">已驳回</span>
+                {% elif report.report_status == 'TAKEDOWN' %}
+                <span class="badge" style="background:rgba(5,150,105,0.18);color:#047857;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.2);">已下架</span>
+                {% elif report.report_status == 'DISABLED' %}
+                <span class="badge" style="background:rgba(220,38,38,0.18);color:#B91C1C;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.2);">已封禁</span>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Body #}
+        <div class="notif-detail-body">
+            {# Report info grid #}
+            <div class="row g-3 mb-4">
+                <div class="col-sm-6">
+                    <div class="text-muted" style="font-size:0.8rem;font-weight:600;">举报类型</div>
+                    <div class="fw-bold">{{ '商品' if report.target_type == 'PRODUCT' else '用户' }}</div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="text-muted" style="font-size:0.8rem;font-weight:600;">举报原因</div>
+                    <div class="fw-bold">{{ report.report_reason }}</div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="text-muted" style="font-size:0.8rem;font-weight:600;">提交时间</div>
+                    <div class="fw-bold">{{ report.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+                </div>
+                {% if report.handled_at %}
+                <div class="col-sm-6">
+                    <div class="text-muted" style="font-size:0.8rem;font-weight:600;">处理时间</div>
+                    <div class="fw-bold">{{ report.handled_at.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+                </div>
+                {% endif %}
+            </div>
+
+            {% if report.description %}
+            <div class="mb-4">
+                <div class="text-muted mb-2" style="font-size:0.8rem;font-weight:600;">详细说明</div>
+                <div class="p-3 rounded-3" style="background:rgba(248,250,252,0.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">
+                    {{ report.description }}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if report.handle_result %}
+            <div class="mb-4">
+                <div class="text-muted mb-2" style="font-size:0.8rem;font-weight:600;">
+                    <i class="bi bi-check-circle me-1 text-success"></i>处理结果说明
+                </div>
+                <div class="p-3 rounded-3" style="background:rgba(248,250,252,0.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">
+                    {{ report.handle_result }}
+                </div>
+            </div>
+            {% endif %}
+
+            {# Target snapshot #}
+            {% if report.target_snapshot %}
+            <div>
+                <div class="text-muted mb-2" style="font-size:0.8rem;font-weight:600;">
+                    <i class="bi bi-camera me-1"></i>举报时目标快照
+                </div>
+                <div class="p-3 rounded-3" style="background:rgba(248,250,252,0.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">
+                    {% if report.target_type == 'PRODUCT' %}
+                    <div class="row g-2">
+                        <div class="col-sm-6"><strong>商品名称：</strong>{{ report.target_snapshot.product_name or '无' }}</div>
+                        <div class="col-sm-6"><strong>价格：</strong><span style="color:#DC2626;">¥{{ report.target_snapshot.price or '0.00' }}</span></div>
+                        <div class="col-12"><strong>描述：</strong>{{ report.target_snapshot.description or '无' }}</div>
+                    </div>
+                    {% else %}
+                    <div class="row g-2">
+                        <div class="col-sm-6"><strong>用户名：</strong>{{ report.target_snapshot.username or '无' }}</div>
+                        <div class="col-sm-6"><strong>昵称：</strong>{{ report.target_snapshot.nickname or '无' }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        {# Footer #}
+        <div class="notif-detail-footer">
+            <a href="{{ url_for('notification.list') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>返回列表
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,68 +1,98 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 {% block title %}分类管理{% endblock %}
+{% block page_title %}分类管理{% endblock %}
 {% block content %}
-<h4 class="mb-3">分类管理</h4>
-<div class="row">
-    <div class="col-md-4">
-        <div class="card shadow-sm mb-3">
-            <div class="card-header"><h6 class="mb-0">添加分类</h6></div>
+
+<div class="row g-4">
+    <!-- Add Category -->
+    <div class="col-lg-4">
+        <div class="admin-card">
+            <div class="card-header">
+                <span><i class="bi bi-plus-circle me-2 text-primary"></i>添加分类</span>
+            </div>
             <div class="card-body">
                 <form method="post" action="{{ url_for('admin.categories') }}">
                     {{ form.hidden_tag() }}
-                    <div class="mb-2">{{ form.category_name.label(class="form-label") }}{{ form.category_name(class="form-control") }}</div>
-                    <div class="mb-2">{{ form.description.label(class="form-label") }}{{ form.description(class="form-control", rows="2") }}</div>
-                    {{ form.submit(class="btn btn-primary btn-sm") }}
+                    <div class="mb-3">
+                        {{ form.category_name.label(class="form-label fw-bold") }}
+                        {{ form.category_name(class="form-control", placeholder="输入分类名称...") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label fw-bold") }}
+                        {{ form.description(class="form-control", rows="2", placeholder="分类描述（可选）...") }}
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-plus-lg me-1"></i>添加分类
+                    </button>
                 </form>
             </div>
         </div>
     </div>
-    <div class="col-md-8">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead class="table-light">
-                    <tr><th>ID</th><th>名称</th><th>描述</th><th>状态</th><th>商品数</th><th>操作</th></tr>
-                </thead>
-                <tbody>
-                    {% for c in categories %}
-                    <tr>
-                        <td>{{ c.category_id }}</td>
-                        <td>{{ c.category_name }}</td>
-                        <td>{{ c.description or '-' }}</td>
-                        <td><span class="badge bg-{{ 'success' if c.status == 'ENABLED' else 'secondary' }}">{{ '启用' if c.status == 'ENABLED' else '已禁用' }}</span></td>
-                        <td>{{ c.product_count }}</td>
-                        <td>
-                            <div class="btn-group btn-group-sm">
-                                <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editModal{{ c.category_id }}">编辑</button>
-                                <form method="post" action="{{ url_for('admin.toggle_category', id=c.category_id) }}" style="display:inline">
-                                    <button class="btn btn-outline-{{ 'warning' if c.status == 'ENABLED' else 'success' }}">{{ '禁用' if c.status == 'ENABLED' else '启用' }}</button>
-                                </form>
-                                <form method="post" action="{{ url_for('admin.delete_category', id=c.category_id) }}" style="display:inline" onsubmit="return confirm('确定删除此分类？')">
-                                    <button class="btn btn-outline-danger">删除</button>
-                                </form>
-                            </div>
-                            <!-- Edit Modal -->
-                            <div class="modal fade" id="editModal{{ c.category_id }}" tabindex="-1">
-                                <div class="modal-dialog">
-                                    <form method="post" action="{{ url_for('admin.update_category', id=c.category_id) }}" class="modal-content">
-                                        <div class="modal-header"><h5 class="modal-title">编辑分类</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                                        <div class="modal-body">
-                                            <label class="form-label">名称</label>
-                                            <input type="text" name="category_name" class="form-control mb-2" value="{{ c.category_name }}">
-                                            <label class="form-label">描述</label>
-                                            <textarea name="description" class="form-control" rows="2">{{ c.description or '' }}</textarea>
+
+    <!-- Category List -->
+    <div class="col-lg-8">
+        <div class="admin-card">
+            <div class="card-header">
+                <span>分类列表 <span class="badge" style="background:#EEF2FF;color:#6366F1;">{{ categories|length }}</span></span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr><th>ID</th><th>名称</th><th>描述</th><th>状态</th><th class="text-center">商品数</th><th>操作</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for c in categories %}
+                            <tr>
+                                <td class="text-muted">{{ c.category_id }}</td>
+                                <td class="fw-bold">{{ c.category_name }}</td>
+                                <td class="text-muted">{{ c.description or '-' }}</td>
+                                <td>
+                                    {% if c.status == 'ENABLED' %}
+                                    <span class="badge" style="background:#D1FAE5;color:#047857;">启用</span>
+                                    {% else %}
+                                    <span class="badge" style="background:#F1F5F9;color:#475569;">已禁用</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">{{ c.product_count }}</td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <button class="btn btn-sm btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#editModal{{ c.category_id }}">编辑</button>
+                                        <form method="post" action="{{ url_for('admin.toggle_category', id=c.category_id) }}" style="display:inline">
+                                            <button class="btn btn-sm btn-outline-{{ 'warning' if c.status == 'ENABLED' else 'success' }}">{{ '禁用' if c.status == 'ENABLED' else '启用' }}</button>
+                                        </form>
+                                        <form method="post" action="{{ url_for('admin.delete_category', id=c.category_id) }}" style="display:inline" onsubmit="return confirm('确定删除此分类？')">
+                                            <button class="btn btn-sm btn-outline-danger">删除</button>
+                                        </form>
+                                    </div>
+                                    <!-- Edit Modal -->
+                                    <div class="modal fade" id="editModal{{ c.category_id }}" tabindex="-1">
+                                        <div class="modal-dialog">
+                                            <form method="post" action="{{ url_for('admin.update_category', id=c.category_id) }}" class="modal-content" style="border-radius:16px;overflow:hidden;">
+                                                <div class="modal-header border-0 pb-0">
+                                                    <h5 class="modal-title fw-bold">编辑分类</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <label class="form-label fw-bold">名称</label>
+                                                    <input type="text" name="category_name" class="form-control mb-3" value="{{ c.category_name }}">
+                                                    <label class="form-label fw-bold">描述</label>
+                                                    <textarea name="description" class="form-control" rows="2">{{ c.description or '' }}</textarea>
+                                                </div>
+                                                <div class="modal-footer border-0">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                                                    <button type="submit" class="btn btn-primary">保存</button>
+                                                </div>
+                                            </form>
                                         </div>
-                                        <div class="modal-footer">
-                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
-                                            <button type="submit" class="btn btn-primary">保存</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 </div>

@@ -8,6 +8,7 @@ from app.models.product import Product
 from app.models.favorite import Favorite
 from app.models.product_comment import ProductComment
 from app.services import browse_service, favorite_service
+from app.services.notification_service import create_notification
 
 
 @browse_bp.route('/')
@@ -145,6 +146,17 @@ def toggle_favorite(product_id):
         product_id=product_id,
         allow_own_product=False
     )
+
+    # 收藏时通知卖家
+    if success and data.get('is_favorited'):
+        product = db.session.get(Product, product_id)
+        if product and product.seller_id != current_user.user_id:
+            create_notification(
+                receiver_id=product.seller_id, ntype='FAVORITE',
+                title='商品被收藏',
+                content=f'用户 {current_user.nickname or current_user.username} 收藏了您的商品「{product.product_name}」。',
+                related_id=product_id, sender_id=current_user.user_id
+            )
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({

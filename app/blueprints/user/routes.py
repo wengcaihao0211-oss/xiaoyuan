@@ -1,4 +1,4 @@
-from flask import render_template, redirect, url_for, flash, request
+from flask import render_template, redirect, url_for, flash, request, abort
 from flask_login import login_required, current_user
 from app.blueprints.user import user_bp
 from app.services import user_service
@@ -76,3 +76,13 @@ def edit_profile():
         if success and action != 'send_contact_otp':
             return redirect(url_for('user.profile'))
     return render_template('user/edit_profile.html', user=current_user, form_data=form_data)
+
+
+@user_bp.route('/report/<int:report_id>')
+@login_required
+def report_result(report_id):
+    from app.models.report import Report
+    report = Report.query.get_or_404(report_id)
+    if report.reporter_id != current_user.user_id:
+        abort(403)
+    return render_template('user/report_detail.html', report=report)

@@ -1,50 +1,103 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 {% block title %}数据统计{% endblock %}
+{% block page_title %}数据统计{% endblock %}
 {% block content %}
-<h4 class="mb-3">数据统计</h4>
-<form class="row g-2 mb-3" method="get">
-    <div class="col-md-3">
-        <label class="form-label small">开始日期</label>
-        <input type="date" name="start" class="form-control" value="{{ start_date }}">
-    </div>
-    <div class="col-md-3">
-        <label class="form-label small">结束日期</label>
-        <input type="date" name="end" class="form-control" value="{{ end_date }}">
-    </div>
-    <div class="col-md-2 d-flex align-items-end">
-        <button type="submit" class="btn btn-primary w-100">查询</button>
-    </div>
-</form>
 
-<div class="row g-3 mb-4">
-    <div class="col-6 col-md-3"><div class="card text-bg-primary"><div class="card-body text-center"><h4>{{ stats.total_users }}</h4><small>用户总数</small></div></div></div>
-    <div class="col-6 col-md-3"><div class="card text-bg-success"><div class="card-body text-center"><h4>{{ stats.on_sale_products }}</h4><small>在售商品</small></div></div></div>
-    <div class="col-6 col-md-3"><div class="card text-bg-warning"><div class="card-body text-center"><h4>{{ stats.total_orders }}</h4><small>总订单</small></div></div></div>
-    <div class="col-6 col-md-3"><div class="card text-bg-info"><div class="card-body text-center"><h4>{{ stats.completion_rate }}%</h4><small>完成率</small></div></div></div>
+<!-- Date Filter -->
+<div class="admin-filter-bar mb-4">
+    <form class="row g-2 align-items-end" method="get">
+        <div class="col-md-3">
+            <label class="form-label small text-muted fw-bold">开始日期</label>
+            <input type="date" name="start" class="form-control" value="{{ start_date }}">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label small text-muted fw-bold">结束日期</label>
+            <input type="date" name="end" class="form-control" value="{{ end_date }}">
+        </div>
+        <div class="col-md-2">
+            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-search me-1"></i>查询</button>
+        </div>
+    </form>
 </div>
 
-<div class="row">
-    <div class="col-md-6">
-        <div class="card shadow-sm mb-3">
-            <div class="card-header"><h6 class="mb-0">分类分布</h6></div>
+<!-- Stat Cards -->
+<div class="admin-stat-row">
+    <div class="admin-stat-card stat-users">
+        <div class="stat-value">{{ stats.total_users }}</div>
+        <div class="stat-label">用户总数</div>
+        <div class="stat-icon"><i class="bi bi-people"></i></div>
+    </div>
+    <div class="admin-stat-card stat-products">
+        <div class="stat-value">{{ stats.on_sale_products }}</div>
+        <div class="stat-label">在售商品</div>
+        <div class="stat-icon"><i class="bi bi-box-seam"></i></div>
+    </div>
+    <div class="admin-stat-card stat-pending">
+        <div class="stat-value">{{ stats.total_orders }}</div>
+        <div class="stat-label">总订单</div>
+        <div class="stat-icon"><i class="bi bi-receipt"></i></div>
+    </div>
+    <div class="admin-stat-card stat-reports">
+        <div class="stat-value">{{ stats.completion_rate }}%</div>
+        <div class="stat-label">完成率</div>
+        <div class="stat-icon"><i class="bi bi-graph-up"></i></div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Category Distribution -->
+    <div class="col-lg-6">
+        <div class="admin-card h-100">
+            <div class="card-header">
+                <span><i class="bi bi-tags me-2 text-primary"></i>分类分布</span>
+            </div>
             <div class="card-body">
-                <table class="table table-sm">
-                    {% for item in cat_dist %}
-                    <tr><td>{{ item.name }}</td><td><span class="badge bg-primary">{{ item.count }}</span></td></tr>
-                    {% endfor %}
-                </table>
+                {% for item in cat_dist %}
+                <div class="d-flex align-items-center justify-content-between py-2 {% if not loop.last %}border-bottom{% endif %}">
+                    <span class="fw-bold">{{ item.name }}</span>
+                    <span class="badge" style="background:#EEF2FF;color:#6366F1;">{{ item.count }}</span>
+                </div>
+                {% endfor %}
             </div>
         </div>
     </div>
-    <div class="col-md-6">
-        <div class="card shadow-sm mb-3">
-            <div class="card-header"><h6 class="mb-0">订单统计（{{ start_date }} ~ {{ end_date }}）</h6></div>
+
+    <!-- Order Stats -->
+    <div class="col-lg-6">
+        <div class="admin-card h-100">
+            <div class="card-header">
+                <span><i class="bi bi-receipt me-2 text-warning"></i>订单统计（{{ start_date }} ~ {{ end_date }}）</span>
+            </div>
             <div class="card-body">
-                <table class="table table-sm">
-                    <tr><td>总订单数</td><td><strong>{{ stats.total_orders }}</strong></td></tr>
-                    <tr><td>已完成</td><td><strong>{{ stats.completed_orders }}</strong></td></tr>
-                    <tr><td>完成率</td><td><strong>{{ stats.completion_rate }}%</strong></td></tr>
-                </table>
+                <div class="row g-3 mb-4">
+                    <div class="col-sm-4">
+                        <div class="text-center p-3 rounded-3" style="background:rgba(99,102,241,0.1);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">
+                            <div class="fw-bold fs-4" style="color:#6366F1;">{{ stats.total_orders }}</div>
+                            <div class="text-muted" style="font-size:0.8rem;">总订单</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="text-center p-3 rounded-3" style="background:rgba(5,150,105,0.1);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">
+                            <div class="fw-bold fs-4" style="color:#059669;">{{ stats.completed_orders }}</div>
+                            <div class="text-muted" style="font-size:0.8rem;">已完成</div>
+                        </div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="text-center p-3 rounded-3" style="background:rgba(217,119,6,0.1);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">
+                            <div class="fw-bold fs-4" style="color:#D97706;">{{ stats.completion_rate }}%</div>
+                            <div class="text-muted" style="font-size:0.8rem;">完成率</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <div class="d-flex justify-content-between mb-1">
+                        <small class="text-muted">订单完成率</small>
+                        <small class="fw-bold">{{ stats.completion_rate }}%</small>
+                    </div>
+                    <div class="progress" style="height:10px; border-radius:999px; background:rgba(241,245,249,0.5);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);">
+                        <div class="progress-bar" role="progressbar" style="width:{{ stats.completion_rate }}%; background:linear-gradient(90deg,#059669,#10B981); border-radius:999px;"></div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

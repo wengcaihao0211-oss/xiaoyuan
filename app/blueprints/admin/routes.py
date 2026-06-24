@@ -14,8 +14,8 @@ from app.models.product import Product
 from app.models.category import Category
 from app.models.orders import Order
 from app.models.report import Report
-from app.models.notification import Notification
 from app.services import auth_service, admin_service, report_service
+from app.services.notification_service import create_notification
 from app.utils.decorators import admin_required
 from app.utils.helpers import mask_phone
 from app.utils.pagination import paginate
@@ -99,17 +99,36 @@ def dashboard():
 @admin_required
 def user_list():
     q = request.args.get('q', '').strip()
+    phone = request.args.get('phone', '').strip()
     status = request.args.get('status', '')
+    date_from = request.args.get('date_from', '').strip()
+    date_to = request.args.get('date_to', '').strip()
     query = User.active()
     if q:
         query = query.filter(User.username.contains(q))
+    if phone:
+        query = query.filter(User.phone.contains(phone))
     if status:
         query = query.filter_by(status=status)
+    if date_from:
+        try:
+            dt_from = datetime.strptime(date_from, '%Y-%m-%d')
+            query = query.filter(User.created_at >= dt_from)
+        except ValueError:
+            pass
+    if date_to:
+        try:
+            dt_to = datetime.strptime(date_to, '%Y-%m-%d') + timedelta(days=1)
+            query = query.filter(User.created_at < dt_to)
+        except ValueError:
+            pass
     query = query.order_by(User.created_at.desc())
     pagination = paginate(query, per_page=20)
     return render_template('admin/user_list.html',
                          users=pagination.items, pagination=pagination,
-                         query=q, status=status, mask_phone=mask_phone)
+                         query=q, phone=phone, status=status,
+                         date_from=date_from, date_to=date_to,
+                         mask_phone=mask_phone)
 
 
 @admin_bp.route('/users/<int:id>')
@@ -326,14 +345,12 @@ def handle_report(id):
     # Create notification for reporter
     report = db.session.get(Report, id)
     if report:
-        notif = Notification(
-            receiver_id=report.reporter_id,
-            notification_type='REPORT',
+        create_notification(
+            receiver_id=report.reporter_id, ntype='REPORT',
             title='举报处理结果',
             content=f'您的举报已被处理。结果：{report.status_display}',
             related_id=report.report_id
         )
-        db.session.add(notif)
         db.session.commit()
 
     flash(message, 'success' if success else 'danger')

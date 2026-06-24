@@ -11,11 +11,11 @@
 
 <div class="row justify-content-center">
     <div class="col-md-7">
-        <div class="card shadow-sm">
+        <div class="order-detail-card">
             <div class="card-header"><h5 class="mb-0">确认订单信息</h5></div>
             <div class="card-body">
                 <!-- 商品信息 -->
-                <div class="card bg-light mb-4">
+                <div class="order-submit-product mb-4">
                     <div class="card-body">
                         <div class="d-flex gap-3">
                             {% if product.cover_image %}
@@ -45,7 +45,7 @@
                         <div class="row g-3">
                             {% for subfield in form.trade_type %}
                   <div class="col-md-6">
-                    <label class="card h-100 border-2 rounded-4 shadow-sm trade-type-card cursor-pointer">
+                    <label class="card h-100 border-0 rounded-4 trade-type-card cursor-pointer">
                       <div class="card-body">
                         <div class="form-check d-flex align-items-center">
                           <div class="me-3">
@@ -94,13 +94,13 @@
                     </div>
 
                     <!-- 提示信息 -->
-                    <div class="alert alert-info small mb-4">
+                    <div class="order-submit-alert small mb-4 p-3">
                         <i class="bi bi-info-circle me-2"></i>
                         <strong>温馨提示：</strong>订单创建后不可直接修改交易方式，如需修改请取消订单后重新下单。
                     </div>
 
                     <div class="d-grid">
-                        {{ form.submit(class="btn btn-danger btn-lg") }}
+                        {{ form.submit(class="btn btn-danger btn-lg", style="border-radius:14px;") }}
                     </div>
                 </form>
             </div>

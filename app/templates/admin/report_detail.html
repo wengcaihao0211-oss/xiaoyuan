@@ -1,145 +1,115 @@
-{% extends "base.html" %}
-{% block title %}举报详情{% endblock %}
+{% extends "admin_base.html" %}
+{% block title %}举报详情 #{{ report.report_id }}{% endblock %}
+{% block page_title %}举报详情{% endblock %}
 {% block content %}
-<nav aria-label="breadcrumb">
-    <ol class="breadcrumb">
-        <li class="breadcrumb-item"><a href="{{ url_for('admin.dashboard') }}">管理后台</a></li>
-        <li class="breadcrumb-item">
-            {% if report.is_appealed and not report.appeal_handled %}
-            <a href="{{ url_for('admin.appeal_list') }}">申诉管理</a>
-            {% else %}
-            <a href="{{ url_for('admin.report_list') }}">举报管理</a>
-            {% endif %}
-        </li>
+
+<nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0" style="font-size:0.85rem;">
+        <li class="breadcrumb-item"><a href="{{ url_for('admin.report_list') }}">举报管理</a></li>
         <li class="breadcrumb-item active">#{{ report.report_id }}</li>
     </ol>
 </nav>
-<div class="row">
-    <div class="col-md-8">
-        <div class="card shadow-sm mb-3">
-            <div class="card-header"><h6 class="mb-0">举报信息</h6></div>
+
+<div class="row g-4">
+    <!-- Report Info -->
+    <div class="col-lg-8">
+        <div class="admin-card mb-4">
+            <div class="card-header">
+                <span><i class="bi bi-flag me-2 text-danger"></i>举报信息</span>
+                {% if report.report_status == 'PENDING' %}
+                <span class="badge" style="background:#FEF3C7;color:#B45309;">待处理</span>
+                {% elif report.report_status == 'DISMISSED' %}
+                <span class="badge" style="background:#F1F5F9;color:#475569;">已驳回</span>
+                {% elif report.report_status == 'DISABLED' %}
+                <span class="badge" style="background:#FEE2E2;color:#B91C1C;">已封禁</span>
+                {% else %}
+                <span class="badge" style="background:#D1FAE5;color:#047857;">{{ report.status_display }}</span>
+                {% endif %}
+            </div>
             <div class="card-body">
-                <table class="table table-sm">
-                    <tr><th width="80">举报人</th><td>{{ report.reporter.username }}</td></tr>
-                    <tr><th>类型</th><td>{{ '商品' if report.target_type == 'PRODUCT' else '用户' }}</td></tr>
-                    <tr><th>原因</th><td>{{ report.report_reason }}</td></tr>
-                    <tr><th>说明</th><td>{{ report.description or '无' }}</td></tr>
-                    <tr><th>状态</th><td><span class="badge bg-{{ 'warning' if report.report_status=='PENDING' else 'secondary' }}">{{ report.status_display }}</span></td></tr>
-                    <tr><th>提交时间</th><td>{{ report.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</td></tr>
-                </table>
-                
-                {% if report.ai_reviewed %}
-                <hr>
-                <h6 class="mb-3"><i class="bi bi-robot"></i> AI审核信息</h6>
-                <table class="table table-sm">
-                    <tr>
-                        <th width="120">AI结果</th>
-                        <td>
-                            {% if report.ai_review_result == 'SAFE' %}
-                            <span class="badge bg-success">安全</span>
-                            {% elif report.ai_review_result == 'VIOLATION' %}
-                            <span class="badge bg-danger">违规</span>
-                            {% else %}
-                            <span class="badge bg-warning">需人工审核</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    <tr><th>置信度</th><td>{{ report.ai_review_confidence }}%</td></tr>
-                    <tr><th>AI理由</th><td>{{ report.ai_review_reason or '无' }}</td></tr>
-                    <tr><th>审核时间</th><td>{{ report.ai_reviewed_at.strftime('%Y-%m-%d %H:%M:%S') if report.ai_reviewed_at else '-' }}</td></tr>
-                    <tr>
-                        <th>需人工审核</th>
-                        <td>
-                            {% if report.needs_human_review %}
-                            <span class="badge bg-warning">是</span>
-                            {% else %}
-                            <span class="badge bg-success">否（已自动处理）</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                </table>
-                {% endif %}
-                
-                {% if report.is_appealed %}
-                <hr>
-                <h6 class="mb-3"><i class="bi bi-exclamation-triangle"></i> 申诉信息</h6>
-                <table class="table table-sm">
-                    <tr><th width="120">申诉时间</th><td>{{ report.appealed_at.strftime('%Y-%m-%d %H:%M:%S') if report.appealed_at else '-' }}</td></tr>
-                    <tr><th>申诉内容</th><td>{{ report.appeal_content or '无' }}</td></tr>
-                    <tr>
-                        <th>申诉状态</th>
-                        <td>
-                            {% if report.appeal_handled %}
-                            <span class="badge bg-secondary">已处理</span>
-                            {% else %}
-                            <span class="badge bg-warning">待处理</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                </table>
-                {% endif %}
-                
-                {% if report.handler %}
-                <hr>
-                <h6 class="mb-3">处理结果</h6>
-                <table class="table table-sm">
-                    <tr><th width="80">处理人</th><td>{{ report.handler.username }}</td></tr>
-                    <tr><th>处理结果</th><td>{{ report.handle_result or '-' }}</td></tr>
-                    <tr><th>处理时间</th><td>{{ report.handled_at.strftime('%Y-%m-%d %H:%M:%S') if report.handled_at else '-' }}</td></tr>
-                </table>
-                {% endif %}
-                
+                <div class="row g-3">
+                    <div class="col-sm-6">
+                        <div class="text-muted" style="font-size:0.8rem;font-weight:600;">举报人</div>
+                        <div class="fw-bold">{{ report.reporter.username }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted" style="font-size:0.8rem;font-weight:600;">举报类型</div>
+                        <div class="fw-bold">{{ '商品' if report.target_type == 'PRODUCT' else '用户' }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted" style="font-size:0.8rem;font-weight:600;">举报原因</div>
+                        <div class="fw-bold">{{ report.report_reason }}</div>
+                    </div>
+                    <div class="col-sm-6">
+                        <div class="text-muted" style="font-size:0.8rem;font-weight:600;">提交时间</div>
+                        <div class="fw-bold">{{ report.created_at.strftime('%Y-%m-%d %H:%M:%S') }}</div>
+                    </div>
+                    {% if report.description %}
+                    <div class="col-12">
+                        <div class="text-muted" style="font-size:0.8rem;font-weight:600;">详细说明</div>
+                        <div class="p-3 rounded-3" style="background:rgba(248,250,252,0.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">{{ report.description }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+
                 {% if report.target_snapshot %}
-                <hr>
-                <h6 class="mb-3">举报时目标快照</h6>
+                <hr class="my-4">
+                <h6 class="fw-bold mb-3"><i class="bi bi-camera me-2"></i>举报时目标快照</h6>
                 {% if report.target_type == 'PRODUCT' %}
-                <div class="p-3 bg-light rounded">
-                    <p class="mb-1"><strong>商品名称：</strong>{{ report.target_snapshot.product_name or '无' }}</p>
-                    <p class="mb-1"><strong>价格：</strong>¥{{ report.target_snapshot.price or '0.00' }}</p>
-                    <p class="mb-1"><strong>描述：</strong>{{ report.target_snapshot.description or '无' }}</p>
-                    <p class="mb-0"><strong>状态：</strong>{{ report.target_snapshot.product_status or '未知' }}</p>
+                <div class="p-3 rounded-3" style="background:rgba(248,250,252,0.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">
+                    <div class="row g-2">
+                        <div class="col-sm-6"><strong>商品名称：</strong>{{ report.target_snapshot.product_name or '无' }}</div>
+                        <div class="col-sm-6"><strong>价格：</strong><span style="color:#DC2626;">¥{{ report.target_snapshot.price or '0.00' }}</span></div>
+                        <div class="col-12"><strong>描述：</strong>{{ report.target_snapshot.description or '无' }}</div>
+                        <div class="col-sm-6"><strong>状态：</strong>{{ report.target_snapshot.product_status or '未知' }}</div>
+                    </div>
                 </div>
                 {% else %}
-                <div class="p-3 bg-light rounded">
-                    <p class="mb-1"><strong>用户名：</strong>{{ report.target_snapshot.username or '无' }}</p>
-                    <p class="mb-1"><strong>昵称：</strong>{{ report.target_snapshot.nickname or '无' }}</p>
-                    <p class="mb-1"><strong>简介：</strong>{{ report.target_snapshot.introduction or '无' }}</p>
-                    <p class="mb-0"><strong>角色：</strong>{{ report.target_snapshot.role or '未知' }}</p>
+                <div class="p-3 rounded-3" style="background:rgba(248,250,252,0.5);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);">
+                    <div class="row g-2">
+                        <div class="col-sm-6"><strong>用户名：</strong>{{ report.target_snapshot.username or '无' }}</div>
+                        <div class="col-sm-6"><strong>昵称：</strong>{{ report.target_snapshot.nickname or '无' }}</div>
+                        <div class="col-sm-6"><strong>简介：</strong>{{ report.target_snapshot.introduction or '无' }}</div>
+                        <div class="col-sm-6"><strong>角色：</strong>{{ report.target_snapshot.role or '未知' }}</div>
+                    </div>
                 </div>
                 {% endif %}
+                {% endif %}
+
+                {% if report.handler %}
+                <hr class="my-4">
+                <h6 class="fw-bold mb-3"><i class="bi bi-check-circle me-2 text-success"></i>处理记录</h6>
+                <div class="row g-3">
+                    <div class="col-sm-4">
+                        <div class="text-muted" style="font-size:0.8rem;font-weight:600;">处理人</div>
+                        <div class="fw-bold">{{ report.handler.username }}</div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="text-muted" style="font-size:0.8rem;font-weight:600;">处理时间</div>
+                        <div class="fw-bold">{{ report.handled_at.strftime('%Y-%m-%d %H:%M:%S') if report.handled_at else '-' }}</div>
+                    </div>
+                    <div class="col-sm-4">
+                        <div class="text-muted" style="font-size:0.8rem;font-weight:600;">处理结果</div>
+                        <div class="fw-bold">{{ report.handle_result or '-' }}</div>
+                    </div>
+                </div>
                 {% endif %}
             </div>
         </div>
     </div>
-    <div class="col-md-4">
-        {% if report.is_appealed and not report.appeal_handled %}
-        <div class="card shadow-sm mb-3">
-            <div class="card-header"><h6 class="mb-0">处理申诉</h6></div>
-            <div class="card-body">
-                <form method="post" action="{{ url_for('admin.handle_appeal', id=report.report_id) }}">
-                    <div class="mb-2">
-                        <label class="form-label">处理方式</label>
-                        <select name="action" class="form-select mb-2" required>
-                            <option value="UPHELD">维持原决定</option>
-                            <option value="REVERSED">推翻原决定</option>
-                        </select>
-                    </div>
-                    <div class="mb-2">
-                        <label class="form-label">处理说明</label>
-                        <textarea name="handle_result" class="form-control" rows="3" maxlength="1000"></textarea>
-                    </div>
-                    <button type="submit" class="btn btn-warning w-100">确认处理</button>
-                </form>
+
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        {% if report.report_status == 'PENDING' %}
+        <div class="admin-card mb-4">
+            <div class="card-header">
+                <span><i class="bi bi-gear me-2"></i>处理举报</span>
             </div>
-        </div>
-        {% elif report.report_status == 'PENDING' %}
-        <div class="card shadow-sm mb-3">
-            <div class="card-header"><h6 class="mb-0">处理举报</h6></div>
             <div class="card-body">
                 <form method="post" action="{{ url_for('admin.handle_report', id=report.report_id) }}">
-                    <div class="mb-2">
-                        <label class="form-label">处理方式</label>
-                        <select name="action" class="form-select mb-2" required>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">处理方式</label>
+                        <select name="action" class="form-select" required>
                             <option value="DISMISSED">驳回举报</option>
                             {% if report.target_type == 'PRODUCT' %}
                             <option value="TAKEDOWN">下架商品</option>
@@ -149,29 +119,36 @@
                             {% endif %}
                         </select>
                     </div>
-                    <div class="mb-2">
-                        <label class="form-label">处理说明</label>
-                        <textarea name="handle_result" class="form-control" rows="3" maxlength="1000"></textarea>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">处理说明</label>
+                        <textarea name="handle_result" class="form-control" rows="3" maxlength="1000" placeholder="请输入处理说明..."></textarea>
                     </div>
-                    <button type="submit" class="btn btn-danger w-100">确认处理</button>
+                    <button type="submit" class="btn btn-danger w-100">
+                        <i class="bi bi-check-lg me-1"></i>确认处理
+                    </button>
                 </form>
             </div>
         </div>
-        {% else %}
-        <div class="alert alert-info">该举报已处理</div>
         {% endif %}
 
         {% if target %}
-        <div class="card shadow-sm mt-3">
-            <div class="card-header"><h6 class="mb-0">被举报对象</h6></div>
+        <div class="admin-card">
+            <div class="card-header">
+                <span><i class="bi bi-eye me-2"></i>被举报对象</span>
+            </div>
             <div class="card-body">
                 {% if report.target_type == 'PRODUCT' %}
-                <p><strong>商品：</strong>{{ target.product_name }}</p>
-                <p><strong>卖家：</strong>{{ target.seller.username }}</p>
-                <a href="{{ url_for('browse.detail', id=target.product_id) }}" target="_blank" class="btn btn-sm btn-outline-primary">查看商品</a>
+                <div class="mb-2"><strong>商品：</strong>{{ target.product_name }}</div>
+                <div class="mb-3"><strong>卖家：</strong>{{ target.seller.username }}</div>
+                <a href="{{ url_for('browse.detail', id=target.product_id) }}" target="_blank" class="btn btn-sm btn-primary w-100">
+                    <i class="bi bi-box-arrow-up-right me-1"></i>查看商品
+                </a>
                 {% else %}
-                <p><strong>用户：</strong>{{ target.username }}</p>
-                <p><strong>状态：</strong>{{ target.status }}</p>
+                <div class="mb-2"><strong>用户：</strong>{{ target.username }}</div>
+                <div class="mb-3"><strong>状态：</strong>{{ target.status }}</div>
+                <a href="{{ url_for('admin.user_detail', id=target.user_id) }}" class="btn btn-sm btn-primary w-100">
+                    <i class="bi bi-person me-1"></i>查看用户
+                </a>
                 {% endif %}
             </div>
         </div>
