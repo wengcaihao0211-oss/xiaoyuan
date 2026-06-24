@@ -8,7 +8,7 @@
                 <a href="javascript:history.back()" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i></a>
                 <div class="chat-header-meta">
                     <strong>{{ other_user.username }}</strong>
-                    <span class="text-muted small">{{ product.product_name }}</span>
+                    <span class="text-muted small">{{ product.product_name if product else '管理员会话' }}</span>
                 </div>
             </div>
             <div class="card-body chat-messages-pane" id="chatMessages">

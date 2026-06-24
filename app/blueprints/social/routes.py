@@ -47,21 +47,46 @@ def chat_list():
     )
 
 
+@social_bp.route('/messages/contact-admin')
+@login_required
+def contact_admin():
+    admin_user = User.active().filter(
+        User.role == 'ADMIN',
+        User.status == 'ACTIVE',
+        User.user_id != current_user.user_id
+    ).order_by(User.user_id.asc()).first()
+
+    if not admin_user:
+        flash('暂无可联系的管理员。', 'warning')
+        return redirect(request.referrer or url_for('notification.list'))
+
+    return redirect(url_for('social.chat_detail', user_id=admin_user.user_id))
+
+
+@social_bp.route('/messages/<int:user_id>', defaults={'product_id': None}, methods=['GET', 'POST'])
 @social_bp.route('/messages/<int:user_id>/<int:product_id>', methods=['GET', 'POST'])
 @login_required
 def chat_detail(user_id, product_id):
     other_user = db.session.get(User, user_id)
-    product = db.session.get(Product, product_id)
-    if not other_user or not product:
+    product = db.session.get(Product, product_id) if product_id is not None else None
+    if not other_user or (product_id is not None and not product):
         flash('用户或商品不存在。', 'danger')
         return redirect(url_for('social.chat_list'))
 
+    existing_messages = message_service.get_chat_messages(current_user.user_id, user_id, product_id)
+
+    if product_id is None and not (other_user.is_admin() or current_user.is_admin() or existing_messages):
+        flash('该会话不存在。', 'danger')
+        return redirect(url_for('social.chat_list'))
+
     # Verify current user is a participant (buyer or seller related to this product)
-    is_participant = (current_user.user_id == product.seller_id or
-                      Order.active().filter_by(
-                          product_id=product_id, buyer_id=current_user.user_id
-                      ).first() is not None or
-                      message_service.get_chat_messages(current_user.user_id, user_id, product_id))
+    is_participant = product_id is None or (
+        current_user.user_id == product.seller_id or
+        Order.active().filter_by(
+            product_id=product_id, buyer_id=current_user.user_id
+        ).first() is not None or
+        existing_messages
+    )
     if not is_participant and current_user.user_id != user_id:
         pass  # Allow access if they have messages
 

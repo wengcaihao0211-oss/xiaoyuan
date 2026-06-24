@@ -53,10 +53,11 @@ def send_message(sender_id, receiver_id, product_id, content):
     if not receiver or receiver.status != 'ACTIVE':
         return False, '对方账号状态异常。', None
     
-    # 验证商品状态
-    product = db.session.get(Product, product_id)
-    if not product or product.deleted:
-        return False, '关联商品不存在。', None
+    # 管理员会话允许不绑定商品，其余消息仍校验商品有效性
+    if product_id is not None:
+        product = db.session.get(Product, product_id)
+        if not product or product.deleted:
+            return False, '关联商品不存在。', None
     
     # 过滤消息内容
     filtered_content = _filter_content(content)

@@ -48,9 +48,7 @@
     {% if conversations %}
     <div class="list-group mb-4">
         {% for conv in conversations %}
-        <a href="{{ url_for('social.chat_detail', 
-                           user_id=conv.other_user.user_id, 
-                           product_id=conv.product.product_id) }}" 
+        <a href="{{ url_for('social.chat_detail', user_id=conv.other_user.user_id, product_id=conv.product.product_id) if conv.product else url_for('social.chat_detail', user_id=conv.other_user.user_id) }}" 
            class="list-group-item list-group-item-action">
             <div class="d-flex align-items-center">
                 <!-- Avatar -->
@@ -78,6 +76,10 @@
                     {% if conv.product %}
                     <small class="text-muted d-block mb-1">
                         <i class="bi bi-box"></i> 关于：{{ conv.product.product_name }}
+                    </small>
+                    {% elif conv.other_user.is_admin() %}
+                    <small class="text-muted d-block mb-1">
+                        <i class="bi bi-headset"></i> 管理员会话
                     </small>
                     {% endif %}
                     
