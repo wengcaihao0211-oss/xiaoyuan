@@ -13,32 +13,28 @@
     <!-- Search and Filter Bar -->
     <div class="card mb-4">
         <div class="card-body">
-            <form id="filterForm" method="GET" class="row g-3">
-                <div class="col-md-8">
-                    <div class="input-group">
-                        <input type="text" 
-                               name="keyword" 
-                               class="form-control" 
-                               placeholder="搜索用户名或商品..."
-                               value="{{ keyword }}">
-                        <button class="btn btn-primary" type="submit">
-                            <i class="bi bi-search"></i> 搜索
-                        </button>
-                    </div>
+            <form id="filterForm" method="GET">
+                <div class="navbar-search-box d-flex align-items-center">
+                    <input type="text"
+                           name="keyword"
+                           class="navbar-search-input form-control"
+                           placeholder="搜索用户名或商品..."
+                           value="{{ keyword }}">
+                    <button class="navbar-search-btn" type="submit" aria-label="搜索消息">
+                        <i class="bi bi-search"></i>
+                    </button>
                 </div>
-                <div class="col-md-4">
-                    <div class="form-check">
-                        <input class="form-check-input" 
-                               type="checkbox" 
-                               name="unread" 
-                               id="unreadOnly"
-                               value="true"
-                               {% if unread_only %}checked{% endif %}
-                               onchange="document.getElementById('filterForm').submit()">
-                        <label class="form-check-label" for="unreadOnly">
-                            只显示未读
-                        </label>
-                    </div>
+                <div class="form-check mt-3">
+                    <input class="form-check-input"
+                           type="checkbox"
+                           name="unread"
+                           id="unreadOnly"
+                           value="true"
+                           {% if unread_only %}checked{% endif %}
+                           onchange="document.getElementById('filterForm').submit()">
+                    <label class="form-check-label" for="unreadOnly">
+                        只显示未读
+                    </label>
                 </div>
             </form>
         </div>

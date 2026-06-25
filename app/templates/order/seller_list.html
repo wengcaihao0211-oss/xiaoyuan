@@ -1,30 +1,36 @@
 {% extends "base.html" %}
 {% block title %}我卖出的{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h4>我卖出的</h4>
-    {% if pending_count > 0 %}
+<div class="d-flex gap-2 flex-wrap mb-3">
+    <a class="order-filter-pill order-view-switch" href="{{ url_for('order.buyer_list') }}">我购买的</a>
+    <a class="order-filter-pill order-view-switch active" href="{{ url_for('order.seller_list') }}">我卖出的</a>
+</div>
+
+{% if pending_count > 0 %}
+<div class="mb-3">
     <span class="badge" style="background:rgba(220,38,38,0.18);color:#B91C1C;backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.2);border-radius:999px;padding:8px 16px;">
         <i class="bi bi-bell"></i> {{ pending_count }} 个待确认
     </span>
-    {% endif %}
 </div>
+{% endif %}
 
 <!-- 搜索栏 -->
 <div class="mb-3">
-    <form class="d-flex gap-2" method="get">
-        <div class="flex-grow-1">
-            <input type="text" name="keyword" class="form-control" placeholder="搜索商品名称..."
+    <form method="get">
+        <div class="navbar-search-box d-flex align-items-center">
+            <input type="text" name="keyword" class="navbar-search-input form-control" placeholder="搜索商品名称..."
                    value="{{ keyword }}">
+            <button type="submit" class="navbar-search-btn" aria-label="搜索订单">
+                <i class="bi bi-search"></i>
+            </button>
         </div>
         <input type="hidden" name="status" value="{{ current_filter }}">
-        <button type="submit" class="btn btn-outline-primary" style="border-radius:12px;">
-            <i class="bi bi-search"></i> 搜索
-        </button>
         {% if keyword %}
-        <a href="{{ url_for('order.seller_list', status=current_filter) }}" class="btn btn-outline-secondary" style="border-radius:12px;">
-            清除
-        </a>
+        <div class="text-end mt-2">
+            <a href="{{ url_for('order.seller_list', status=current_filter) }}" class="small text-muted text-decoration-none">
+                清除搜索
+            </a>
+        </div>
         {% endif %}
     </form>
 </div>

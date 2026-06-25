@@ -121,12 +121,12 @@
                             </a>
                             {% endif %}
                             {% if product.seller_id == current_user.user_id %}
-                            <a href="{{ url_for('product.edit', id=product.product_id) }}" class="btn btn-seller">
+                            <a href="{{ url_for('product.edit', id=product.product_id) }}" class="btn btn-detail btn-edit-glass">
                                 <i class="bi bi-pencil me-1"></i>编辑
                             </a>
                             {% if product.product_status == 'ON_SALE' %}
                             <form method="post" action="{{ url_for('product.toggle', id=product.product_id) }}" style="display:inline" onsubmit="return confirm('确定下架该商品？')">
-                                <button class="btn btn-seller btn-takedown">
+                                <button class="btn btn-detail btn-takedown-glass" type="submit">
                                     <i class="bi bi-box-arrow-down me-1"></i>下架
                                 </button>
                             </form>
@@ -370,6 +370,82 @@
 .btn-outline-secondary.btn-detail:active {
   transform: translateY(0);
   box-shadow: 0 2px 10px rgba(142, 142, 147, 0.2), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+/* 编辑按钮 - 蓝色液态玻璃效果 */
+.btn-edit-glass {
+  background: linear-gradient(135deg, rgba(0, 122, 255, 0.85), rgba(90, 200, 250, 0.85));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 16px rgba(0, 122, 255, 0.3), 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+}
+
+.btn-edit-glass:hover,
+.btn-edit-glass:focus {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 122, 255, 0.38), 0 2px 6px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.3) inset !important;
+  filter: brightness(1.06);
+  color: #1a1a1a;
+}
+
+.btn-edit-glass:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(0, 122, 255, 0.25), 0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.25) inset !important;
+}
+
+/* 下架按钮 - 暖黄色液态玻璃效果 */
+.btn-takedown-glass {
+  background: linear-gradient(135deg, rgba(255, 149, 0, 0.85), rgba(255, 204, 0, 0.85));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 4px 16px rgba(255, 149, 0, 0.3), 0 1px 3px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(255, 255, 255, 0.2) inset;
+}
+
+.btn-takedown-glass:hover,
+.btn-takedown-glass:focus {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 149, 0, 0.38), 0 2px 6px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(255, 255, 255, 0.3) inset !important;
+  filter: brightness(1.06);
+  color: #1a1a1a;
+}
+
+.btn-takedown-glass:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 10px rgba(255, 149, 0, 0.25), 0 1px 2px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.25) inset !important;
+}
+
+/* 购买按钮 - 悬浮聚焦文字变黑 */
+.btn-primary.btn-detail:hover,
+.btn-primary.btn-detail:focus {
+  color: #1a1a1a;
+}
+
+/* 私聊按钮 - 悬浮聚焦文字变黑 */
+.btn-outline-primary.btn-detail:hover,
+.btn-outline-primary.btn-detail:focus {
+  color: #1a1a1a;
+}
+
+/* 收藏按钮 - 悬浮聚焦文字变黑 */
+.btn-outline-danger.btn-detail:hover,
+.btn-outline-danger.btn-detail:focus {
+  color: #1a1a1a;
+}
+
+/* 收藏按钮激活状态 - 悬浮聚焦文字变黑 */
+.btn-fav.active:hover,
+.btn-fav.active:focus {
+  color: #1a1a1a !important;
+}
+
+/* 举报按钮 - 悬浮聚焦文字变黑 */
+.btn-outline-secondary.btn-detail:hover,
+.btn-outline-secondary.btn-detail:focus {
+  color: #1a1a1a;
 }
 
 @media (max-width: 768px) {

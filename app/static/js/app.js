@@ -32,14 +32,22 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // --- Mobile navbar: collapse on link click ---
+    // --- Mobile navbar: collapse on navigation click, but keep dropdown toggles open ---
     document.querySelectorAll('#navbarNav .nav-link, #navbarNav .dropdown-item').forEach(function (link) {
-        link.addEventListener('click', function () {
+        link.addEventListener('click', function (event) {
             var nav = document.getElementById('navbarNav');
+            var isDropdownToggle = event.currentTarget.matches('[data-bs-toggle="dropdown"], .dropdown-toggle');
+
+            if (isDropdownToggle) {
+                return;
+            }
+
             if (nav && nav.classList.contains('show')) {
                 setTimeout(function () {
                     var bsCollapse = bootstrap.Collapse.getInstance(nav);
-                    if (bsCollapse) bsCollapse.hide();
+                    if (bsCollapse) {
+                        bsCollapse.hide();
+                    }
                 }, 150);
             }
         });

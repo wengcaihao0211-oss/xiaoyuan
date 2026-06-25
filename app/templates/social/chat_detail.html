@@ -1,11 +1,162 @@
 {% extends "base.html" %}
 {% block title %}与 {{ other_user.username }} 聊天{% endblock %}
+{% block extra_css %}
+<style>
+.chat-card-shell {
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(28px) saturate(150%);
+    -webkit-backdrop-filter: blur(28px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 34px;
+    box-shadow: 0 18px 48px rgba(88, 86, 214, 0.12), 0 8px 24px rgba(32, 24, 86, 0.06), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+    overflow: hidden;
+}
+
+.chat-card-shell .card-header,
+.chat-card-shell .card-footer {
+    background: rgba(255, 255, 255, 0.22);
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
+.chat-card-shell .card-header {
+    padding: 18px 22px;
+}
+
+.chat-card-shell .card-footer {
+    padding: 18px 22px 20px;
+}
+
+.chat-header-avatar,
+.chat-message-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    object-fit: cover;
+    flex-shrink: 0;
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    box-shadow: 0 8px 18px rgba(88, 86, 214, 0.12);
+}
+
+.chat-header-avatar.avatar-placeholder,
+.chat-message-avatar.avatar-placeholder {
+    width: 42px;
+    height: 42px;
+    font-size: 0.95rem;
+}
+
+.chat-header-meta {
+    min-width: 0;
+}
+
+.chat-header-meta strong,
+.chat-header-meta .text-muted {
+    display: block;
+}
+
+.chat-messages-pane {
+    min-height: 560px;
+    max-height: 68vh;
+    padding: 28px 24px 20px;
+    overflow-y: auto;
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.12) 100%);
+}
+
+.chat-message-row {
+    display: flex;
+    margin-bottom: 18px;
+}
+
+.chat-message-row.is-self {
+    justify-content: flex-end;
+}
+
+.chat-message-stack {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    max-width: min(82%, 620px);
+}
+
+.chat-message-row.is-self .chat-message-stack {
+    justify-content: flex-end;
+    flex-direction: row-reverse;
+}
+
+.chat-bubble {
+    border-radius: 24px;
+    padding: 14px 16px 12px;
+    box-shadow: 0 10px 24px rgba(88, 86, 214, 0.08);
+}
+
+.chat-bubble-self,
+.chat-bubble-self p,
+.chat-bubble-self small,
+.chat-bubble-other,
+.chat-bubble-other p,
+.chat-bubble-other small {
+    color: #fff !important;
+}
+
+.chat-bubble-other {
+    background: linear-gradient(135deg, rgba(122, 108, 232, 0.92), rgba(164, 140, 245, 0.9)) !important;
+    border: 1px solid rgba(255, 255, 255, 0.34);
+}
+
+.chat-bubble p {
+    line-height: 1.6;
+}
+
+.chat-empty-state {
+    min-height: 360px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+@media (max-width: 768px) {
+    .chat-card-shell {
+        border-radius: 28px;
+    }
+
+    .chat-card-shell .card-header,
+    .chat-card-shell .card-footer {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
+
+    .chat-messages-pane {
+        min-height: 500px;
+        max-height: 62vh;
+        padding: 22px 16px 18px;
+    }
+
+    .chat-message-stack {
+        max-width: 100%;
+        gap: 10px;
+    }
+
+    .chat-header-avatar,
+    .chat-message-avatar,
+    .chat-header-avatar.avatar-placeholder,
+    .chat-message-avatar.avatar-placeholder {
+        width: 38px;
+        height: 38px;
+    }
+}
+</style>
+{% endblock %}
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-8">
         <div class="card shadow-sm chat-card-shell">
             <div class="card-header d-flex align-items-center">
                 <a href="javascript:history.back()" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i></a>
+                {% if other_user.avatar %}
+                <img src="{{ url_for('static', filename=other_user.avatar) }}" alt="{{ other_user.username }}" class="chat-header-avatar me-3">
+                {% else %}
+                <span class="avatar-placeholder chat-header-avatar me-3">{{ other_user.username[0] }}</span>
+                {% endif %}
                 <div class="chat-header-meta">
                     <strong>{{ other_user.username }}</strong>
                     <span class="text-muted small">{{ product.product_name if product else '管理员会话' }}</span>
@@ -14,26 +165,41 @@
             <div class="card-body chat-messages-pane" id="chatMessages">
                 {% if messages %}
                 {% for msg in messages %}
-                <div class="d-flex mb-3 {{ 'justify-content-end' if msg.sender_id == current_user.user_id else '' }}">
-                    <div class="rounded px-3 py-2 chat-bubble {{ 'bg-primary text-white' if msg.sender_id == current_user.user_id else 'bg-light' }}">
-                        <p class="mb-0">{{ msg.message_content }}</p>
-                        <div class="d-flex align-items-center justify-content-end gap-1">
-                            <small class="{{ 'text-white-50' if msg.sender_id == current_user.user_id else 'text-muted' }}">
+                <div class="chat-message-row {{ 'is-self' if msg.sender_id == current_user.user_id else '' }}">
+                    <div class="chat-message-stack">
+                        {% if msg.sender_id == current_user.user_id %}
+                            {% if current_user.avatar %}
+                            <img src="{{ url_for('static', filename=current_user.avatar) }}" alt="{{ current_user.username }}" class="chat-message-avatar">
+                            {% else %}
+                            <span class="avatar-placeholder chat-message-avatar">{{ current_user.username[0] }}</span>
+                            {% endif %}
+                        {% else %}
+                            {% if other_user.avatar %}
+                            <img src="{{ url_for('static', filename=other_user.avatar) }}" alt="{{ other_user.username }}" class="chat-message-avatar">
+                            {% else %}
+                            <span class="avatar-placeholder chat-message-avatar">{{ other_user.username[0] }}</span>
+                            {% endif %}
+                        {% endif %}
+                        <div class="chat-bubble {{ 'bg-primary chat-bubble-self' if msg.sender_id == current_user.user_id else 'chat-bubble-other' }}">
+                            <p class="mb-0">{{ msg.message_content }}</p>
+                            <div class="d-flex align-items-center justify-content-end gap-1">
+                            <small>
                                 {{ msg.created_at|beijing_hm }}
                             </small>
                             {% if msg.sender_id == current_user.user_id %}
                                 {% if msg.read_status %}
-                                <small class="text-white-50"><i class="bi bi-check-all ms-1"></i>已读</small>
+                                <small><i class="bi bi-check-all ms-1"></i>已读</small>
                                 {% else %}
-                                <small class="text-white-50"><i class="bi bi-check ms-1"></i>未读</small>
+                                <small><i class="bi bi-check ms-1"></i>未读</small>
                                 {% endif %}
                             {% endif %}
+                            </div>
                         </div>
                     </div>
                 </div>
                 {% endfor %}
                 {% else %}
-                <div class="text-center py-5 text-muted">开始对话吧</div>
+                <div class="text-center py-5 text-muted chat-empty-state">开始对话吧</div>
                 {% endif %}
             </div>
             <div class="card-footer">
