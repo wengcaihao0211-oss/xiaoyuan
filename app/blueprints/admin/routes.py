@@ -14,7 +14,7 @@ from app.models.product import Product
 from app.models.category import Category
 from app.models.orders import Order
 from app.models.report import Report
-from app.services import auth_service, admin_service, report_service
+from app.services import auth_service, admin_service, report_service, message_service
 from app.services.notification_service import create_notification
 from app.utils.decorators import admin_required
 from app.utils.helpers import mask_phone
@@ -430,3 +430,16 @@ def statistics():
                          cat_dist=cat_dist,
                          start_date=start_date.strftime('%Y-%m-%d'),
                          end_date=end_date.strftime('%Y-%m-%d'))
+
+
+# ---- Admin Context Processor ----
+@admin_bp.context_processor
+def admin_context():
+    pending_count = Product.active().filter_by(product_status='PENDING_REVIEW').count()
+    pending_reports_count = Report.query.filter_by(report_status='PENDING').count()
+    unread_message_count = message_service.get_unread_count(current_user.user_id) if current_user.is_authenticated and current_user.is_admin() else 0
+    return dict(
+        pending_count=pending_count,
+        pending_reports_count=pending_reports_count,
+        unread_message_count=unread_message_count
+    )

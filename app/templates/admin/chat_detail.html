@@ -1,6 +1,8 @@
-{% extends "base.html" %}
+{% extends "admin_base.html" %}
 {% block title %}与 {{ other_user.username }} 聊天{% endblock %}
-{% block extra_css %}
+{% block page_title %}消息管理{% endblock %}
+{% block content %}
+
 <style>
 .chat-card-shell {
     background: rgba(255, 255, 255, 0.5);
@@ -154,22 +156,12 @@
     }
 }
 </style>
-{% endblock %}
-{% block content %}
+
 <div class="row justify-content-center">
-    <div class="col-md-8">
-        <!-- 管理员返回后台按钮 -->
-        {% if current_user.is_authenticated and current_user.is_admin() %}
-        <div class="mb-3">
-            <a href="{{ url_for('admin.dashboard') }}" class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-speedometer2 me-1"></i>返回管理后台
-            </a>
-        </div>
-        {% endif %}
-        
+    <div class="col-md-12">
         <div class="card shadow-sm chat-card-shell">
             <div class="card-header d-flex align-items-center">
-                <a href="javascript:history.back()" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i></a>
+                <a href="{{ url_for('social.chat_list') }}" class="btn btn-sm btn-outline-secondary me-2"><i class="bi bi-arrow-left"></i></a>
                 <a href="{{ url_for('user.view_profile', user_id=other_user.user_id) }}" class="text-decoration-none">
                     {% if other_user.avatar %}
                     <img src="{{ url_for('static', filename=other_user.avatar) }}" alt="{{ other_user.username }}" class="chat-header-avatar me-3">
@@ -241,7 +233,7 @@
         </div>
     </div>
 </div>
-{% endblock %}
+
 {% block extra_js %}
 <script>
 // Auto scroll to bottom
@@ -262,4 +254,5 @@ if(chatInput && charCount) {
     chatInput.addEventListener('input', updateCount);
 }
 </script>
+{% endblock %}
 {% endblock %}

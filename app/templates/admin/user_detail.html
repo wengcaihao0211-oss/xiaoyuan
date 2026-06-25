@@ -24,7 +24,7 @@
                 {% endif %}
                 <h5 class="fw-bold mb-1">{{ user.username }}</h5>
                 <p class="text-muted mb-3" style="font-size:0.85rem;">{{ user.introduction or '暂无简介' }}</p>
-                <div class="d-flex justify-content-center gap-2">
+                <div class="d-flex justify-content-center gap-2 mb-3">
                     {% if user.status == 'ACTIVE' %}
                     <span class="badge" style="background:#D1FAE5;color:#047857;">正常</span>
                     {% else %}
@@ -34,6 +34,11 @@
                     <span class="badge" style="background:#EEF2FF;color:#6366F1;">管理员</span>
                     {% endif %}
                 </div>
+                {% if user.role != 'ADMIN' %}
+                <a href="{{ url_for('social.chat_detail', user_id=user.user_id) }}" class="btn btn-sm btn-primary w-100">
+                    <i class="bi bi-chat-dots me-1"></i>联系用户
+                </a>
+                {% endif %}
             </div>
         </div>
     </div>

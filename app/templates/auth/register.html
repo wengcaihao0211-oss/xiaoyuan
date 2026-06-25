@@ -1,6 +1,18 @@
 {% extends "base.html" %}
 {% block title %}注册 - 校园二手交易{% endblock %}
 {% block content %}
+<style>
+    .auth-input-wrap .form-control,
+    .auth-input-wrap .form-select {
+        border: 1px solid rgba(88, 86, 214, 0.35) !important;
+        box-shadow: none !important;
+    }
+    .auth-input-wrap .form-control:focus,
+    .auth-input-wrap .form-select:focus {
+        border-color: rgba(88, 86, 214, 0.6) !important;
+        box-shadow: 0 0 0 0.2rem rgba(88, 86, 214, 0.15) !important;
+    }
+</style>
 <section class="auth-shell">
     <div class="auth-card">
         <div class="auth-panel auth-panel-brand auth-panel-brand-alt">
@@ -153,12 +165,7 @@
                 </div>
             </form>
 
-            <div class="auth-divider"><span>已有账号</span></div>
 
-            <div class="auth-footer">
-                <p class="mb-2">如果你已经注册过账号，可直接登录继续管理商品和订单。</p>
-                <a href="{{ url_for('auth.login') }}" class="btn btn-outline-primary w-100">去登录</a>
-            </div>
         </div>
     </div>
 </section>

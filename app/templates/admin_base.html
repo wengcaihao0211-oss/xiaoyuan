@@ -42,6 +42,12 @@
                 <span class="sidebar-badge">{{ pending_reports_count }}</span>
                 {% endif %}
             </a>
+            <a href="{{ url_for('social.chat_list') }}" class="sidebar-link {% if request.endpoint in ('social.chat_list','social.chat_detail') %}active{% endif %}">
+                <i class="bi bi-chat-dots"></i><span>消息管理</span>
+                {% if unread_message_count is defined and unread_message_count > 0 %}
+                <span class="sidebar-badge">{{ unread_message_count }}</span>
+                {% endif %}
+            </a>
             <a href="{{ url_for('admin.categories') }}" class="sidebar-link {% if request.endpoint == 'admin.categories' %}active{% endif %}">
                 <i class="bi bi-tags"></i><span>分类管理</span>
             </a>
@@ -76,10 +82,41 @@
                     <span class="admin-username">{{ current_user.username }}</span>
                 </div>
                 <form method="get" action="{{ url_for('admin.logout') }}" class="m-0">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                    <button type="submit" class="admin-logout-btn">
                         <i class="bi bi-box-arrow-right me-1"></i>退出
                     </button>
                 </form>
+                <style>
+                    .admin-logout-btn {
+                        background: linear-gradient(135deg, rgba(220, 38, 38, 0.85) 0%, rgba(248, 113, 113, 0.85) 100%);
+                        color: white;
+                        border: 1px solid rgba(255, 255, 255, 0.18);
+                        border-radius: 999px;
+                        padding: 0.45rem 1rem;
+                        font-weight: 500;
+                        font-size: 0.9rem;
+                        backdrop-filter: blur(12px);
+                        -webkit-backdrop-filter: blur(12px);
+                        box-shadow: 
+                            0 4px 14px rgba(220, 38, 38, 0.15),
+                            inset 0 1px 0 rgba(255, 255, 255, 0.2);
+                        transition: all 0.2s ease;
+                        text-decoration: none;
+                        cursor: pointer;
+                    }
+                    .admin-logout-btn:hover {
+                        transform: translateY(-1px);
+                        box-shadow: 
+                            0 6px 20px rgba(220, 38, 38, 0.2),
+                            inset 0 1px 0 rgba(255, 255, 255, 0.25);
+                    }
+                    .admin-logout-btn:focus {
+                        outline: none;
+                        box-shadow: 
+                            0 0 0 4px rgba(220, 38, 38, 0.2),
+                            inset 0 1px 0 rgba(255, 255, 255, 0.25);
+                    }
+                </style>
             </div>
         </header>
 

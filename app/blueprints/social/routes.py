@@ -36,8 +36,14 @@ def chat_list():
         unread_only=unread_only
     )
     
+    # 根据用户角色选择使用哪个模板
+    if current_user.is_admin():
+        template_name = 'admin/chat_list.html'
+    else:
+        template_name = 'social/chat_list.html'
+    
     return render_template(
-        'social/chat_list.html',
+        template_name,
         conversations=conversations,
         total_unread=total_unread,
         total_pages=total_pages,
@@ -106,7 +112,14 @@ def chat_detail(user_id, product_id):
     message_service.mark_messages_read(current_user.user_id, user_id, product_id)
 
     messages = message_service.get_chat_messages(current_user.user_id, user_id, product_id)
-    return render_template('social/chat_detail.html',
+    
+    # 根据用户角色选择使用哪个模板
+    if current_user.is_admin():
+        template_name = 'admin/chat_detail.html'
+    else:
+        template_name = 'social/chat_detail.html'
+    
+    return render_template(template_name,
                          messages=messages, other_user=other_user,
                          product=product, form=form)
 

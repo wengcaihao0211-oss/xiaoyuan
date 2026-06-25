@@ -1,6 +1,16 @@
 {% extends "base.html" %}
 {% block title %}登录 - 校园二手交易{% endblock %}
 {% block content %}
+<style>
+    .auth-input-wrap .form-control {
+        border: 1px solid rgba(88, 86, 214, 0.35) !important;
+        box-shadow: none !important;
+    }
+    .auth-input-wrap .form-control:focus {
+        border-color: rgba(88, 86, 214, 0.6) !important;
+        box-shadow: 0 0 0 0.2rem rgba(88, 86, 214, 0.15) !important;
+    }
+</style>
 <section class="auth-shell">
     <div class="auth-card">
         <div class="auth-panel auth-panel-brand">
@@ -88,12 +98,7 @@
                 </div>
             </form>
 
-            <div class="auth-divider"><span>新用户入口</span></div>
 
-            <div class="auth-footer">
-                <p class="mb-2">还没有账号？现在就完成注册，开始发布和购买闲置物品。</p>
-                <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary w-100">立即注册</a>
-            </div>
         </div>
     </div>
 </section>

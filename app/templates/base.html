@@ -41,8 +41,8 @@
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('browse.home') }}"><i class="bi bi-house me-1"></i>前台首页</a></li>
                         {% else %}
                             <li class="nav-item"><a class="nav-link" href="{{ url_for('browse.home') }}"><i class="bi bi-house me-1"></i>首页</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('product.publish') }}"><i class="bi bi-plus-circle me-1"></i>发布</a></li>
-                            <li class="nav-item"><a class="nav-link position-relative" href="{{ url_for('browse.favorites') }}" id="favLink">
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'product.publish' else '' }}" href="{{ url_for('product.publish') }}"><i class="bi bi-plus-circle me-1"></i>发布</a></li>
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint == 'browse.favorites' else '' }} position-relative" href="{{ url_for('browse.favorites') }}" id="favLink">
                                 <i class="bi bi-heart me-1"></i>收藏
                                 {% if favorite_count > 0 %}
                                 <span class="fav-dot" id="favDot"></span>
@@ -51,7 +51,7 @@
                             <li class="nav-item">
                                 <a class="nav-link {{ 'active' if request.endpoint in ['order.buyer_list', 'order.seller_list'] else '' }}" href="{{ url_for('order.buyer_list') }}"><i class="bi bi-receipt me-1"></i>订单</a>
                             </li>
-                            <li class="nav-item"><a class="nav-link position-relative" href="{{ url_for('social.chat_list') }}">
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint in ['social.chat_list', 'social.chat_detail'] else '' }} position-relative" href="{{ url_for('social.chat_list') }}">
                                 <i class="bi bi-chat-dots me-1"></i>消息
                                 {% if unread_message_count > 0 %}
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.65rem">
@@ -59,7 +59,7 @@
                                 </span>
                                 {% endif %}
                             </a></li>
-                            <li class="nav-item"><a class="nav-link position-relative" href="{{ url_for('notification.list') }}">
+                            <li class="nav-item"><a class="nav-link {{ 'active' if request.endpoint in ['notification.list', 'notification.detail'] else '' }} position-relative" href="{{ url_for('notification.list') }}">
                                 <i class="bi bi-bell me-1"></i>通知
                                 {% if unread_notification_count > 0 %}
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:0.65rem">
@@ -96,8 +96,8 @@
                             </ul>
                         </li>
                     {% else %}
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">登录</a></li>
-                        <li class="nav-item ms-1"><a class="btn btn-light btn-sm px-3" href="{{ url_for('auth.register') }}">免费注册</a></li>
+                        <li class="nav-item"><a class="btn btn-light btn-sm px-3" href="{{ url_for('auth.login') }}">登录</a></li>
+                        <li class="nav-item ms-1"><a class="btn btn-light btn-sm px-3" href="{{ url_for('auth.register') }}">注册</a></li>
                     {% endif %}
                 </ul>
             </div>
